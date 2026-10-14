@@ -1,0 +1,25 @@
+{
+  "name": "Ciao Rock",
+  "short_name": "Ciao Rock",
+  "description": "Caccia ai sassi dipinti: mappa GPS, indizi, collezione e badge.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fdf8f2",
+  "theme_color": "#f2a65a",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

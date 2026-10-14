@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791004535076,
+      "tag": "0000_rock_points_ratings",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791094136291,
+      "tag": "0001_ai_points_feedback",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791822674225,
+      "tag": "0002_profiles_live_location",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791822826141,
+      "tag": "0003_friend_requests",
+      "breakpoints": true
+    }
+  ]
+}

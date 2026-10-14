@@ -1,0 +1,227 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --font-display: "Baloo 2", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --color-moss: var(--moss);
+  --color-moss-foreground: var(--moss-foreground);
+  --color-paint: var(--paint);
+  --color-paint-foreground: var(--paint-foreground);
+  --color-stone: var(--stone);
+  --color-stone-foreground: var(--stone-foreground);
+  --shadow-pebble: 0 10px 24px -12px oklch(0.35 0.05 80 / 0.45);
+  --shadow-lift: 0 18px 40px -20px oklch(0.3 0.05 80 / 0.55);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 1.1rem;
+  --background: oklch(0.972 0.017 85);
+  --foreground: oklch(0.28 0.035 60);
+  --card: oklch(0.995 0.008 90);
+  --card-foreground: oklch(0.28 0.035 60);
+  --popover: oklch(0.995 0.008 90);
+  --popover-foreground: oklch(0.28 0.035 60);
+  --primary: oklch(0.52 0.13 145);
+  --primary-foreground: oklch(0.985 0.012 120);
+  --secondary: oklch(0.93 0.03 80);
+  --secondary-foreground: oklch(0.32 0.04 60);
+  --muted: oklch(0.94 0.02 85);
+  --muted-foreground: oklch(0.52 0.03 70);
+  --accent: oklch(0.78 0.16 55);
+  --accent-foreground: oklch(0.25 0.04 50);
+  --destructive: oklch(0.58 0.2 25);
+  --destructive-foreground: oklch(0.985 0.01 90);
+  --border: oklch(0.88 0.025 80);
+  --input: oklch(0.88 0.025 80);
+  --ring: oklch(0.52 0.13 145);
+  --moss: oklch(0.42 0.1 148);
+  --moss-foreground: oklch(0.98 0.01 120);
+  --paint: oklch(0.66 0.19 25);
+  --paint-foreground: oklch(0.99 0.01 90);
+  --stone: oklch(0.62 0.02 80);
+  --stone-foreground: oklch(0.99 0.01 90);
+  --chart-1: oklch(0.52 0.13 145);
+  --chart-2: oklch(0.78 0.16 55);
+  --chart-3: oklch(0.66 0.19 25);
+  --chart-4: oklch(0.62 0.02 80);
+  --chart-5: oklch(0.42 0.1 148);
+  --sidebar: oklch(0.972 0.017 85);
+  --sidebar-foreground: oklch(0.28 0.035 60);
+  --sidebar-primary: oklch(0.52 0.13 145);
+  --sidebar-primary-foreground: oklch(0.985 0.012 120);
+  --sidebar-accent: oklch(0.93 0.03 80);
+  --sidebar-accent-foreground: oklch(0.32 0.04 60);
+  --sidebar-border: oklch(0.88 0.025 80);
+  --sidebar-ring: oklch(0.52 0.13 145);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+@utility pebble-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-pebble);
+}
+
+@utility app-frame {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 28rem;
+  min-height: 100vh;
+  padding-bottom: 5.5rem;
+  position: relative;
+}
+
+/* Leaflet sizing + control tweaks (base CSS comes from the leaflet package) */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+  background: var(--color-muted);
+  font-family: var(--font-sans);
+}
+.leaflet-control-attribution {
+  background: oklch(1 0 0 / 0.7);
+  padding: 0 5px;
+  font-size: 10px;
+  color: var(--color-muted-foreground);
+  border-radius: 6px;
+}
+.leaflet-control-attribution a {
+  color: inherit;
+}
+.leaflet-control-zoom {
+  display: none;
+}
+
+.rock-pin {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  font-size: 22px;
+  border-radius: 999px;
+  background: var(--color-card);
+  border: 2px solid var(--color-moss);
+  box-shadow: var(--shadow-pebble);
+}
+.rock-pin.is-found {
+  border-color: var(--color-accent);
+  opacity: 0.75;
+}
+.rock-pin.is-dragging {
+  border-color: var(--color-paint);
+  border-width: 3px;
+  transform: scale(1.15);
+  animation: rock-pin-pulse 1s ease-in-out infinite;
+}
+@keyframes rock-pin-pulse {
+  50% {
+    transform: scale(1.25);
+  }
+}
+.me-pin {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--color-paint);
+  border: 3px solid var(--color-card);
+  box-shadow: var(--shadow-pebble);
+}
+
+
+.cluster-pin {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-card);
+  border-radius: 999px;
+  background: var(--color-moss);
+  border: 3px solid var(--color-card);
+  box-shadow: var(--shadow-lift);
+}
+
+.friend-pin { display:flex; flex-direction:column; align-items:center; gap:2px; }
+.friend-name { font-size:11px; font-weight:700; padding:1px 6px; border-radius:999px; background:var(--card); color:var(--foreground); border:1px solid var(--border); white-space:nowrap; box-shadow:0 1px 3px rgb(0 0 0 / .25); }
+.friend-avatar { display:grid; place-items:center; width:32px; height:32px; border-radius:999px; background:var(--primary); border:2px solid var(--background); font-size:18px; }
