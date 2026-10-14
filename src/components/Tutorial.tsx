@@ -145,7 +145,7 @@ const STEPS: Step[] = [
           Dipingi una faccia o un disegno su un sasso, poi tocca il <strong>+</strong> in basso.
         </Point>
         <Point icon={<Lightbulb className="h-4 w-4" />}>
-          Aggiungi foto, nome, un indizio e la posizione esatta del nascondiglio.
+          Nascondilo dove ti trovi e aggiungi foto, nome, un indizio e la posizione esatta.
         </Point>
         <Point icon={<Zap className="h-4 w-4" />}>
           L'AI legge l'indizio e decide quanti punti vale: da 50 a 2.000. Più è difficile, più vale.

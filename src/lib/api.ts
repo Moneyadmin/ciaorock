@@ -152,6 +152,8 @@ export async function createRock(input: {
   lat: number;
   lng: number;
   difficulty: string;
+  fromLat?: number | undefined;
+  fromLng?: number | undefined;
   token?: string | undefined;
 }) {
   const result = unwrap(await createRockFn({ data: input }));

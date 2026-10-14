@@ -30,13 +30,39 @@ const CreateInput = z.object({
   photo: Photo,
   lat: Lat,
   lng: Lng,
+  /** dove si trova il giocatore adesso (il nascondiglio deve essere vicino); facoltativo per gli admin */
+  fromLat: Lat.optional(),
+  fromLng: Lng.optional(),
   token: Token,
 });
+
+async function isAdmin(context: { supabase: unknown; userId: string }) {
+  const supabase = context.supabase as {
+    rpc: (
+      fn: "has_role",
+      args: { _user_id: string; _role: "admin" },
+    ) => PromiseLike<{ data: unknown }>;
+  };
+  const { data } = await supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
+  return data === true;
+}
 
 export const createRockFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => CreateInput.parse(d))
   .handler(async ({ data, context }): Promise<GameResult> => {
+    if (!(await isAdmin(context))) {
+      if (data.fromLat == null || data.fromLng == null) {
+        return { ok: false, message: "Serve la tua posizione GPS per nascondere un sasso." };
+      }
+      const hide = metersBetween({ lat: data.fromLat, lng: data.fromLng }, data);
+      if (hide > HIDE_RADIUS_M) {
+        return {
+          ok: false,
+          message: `Il nascondiglio è a ${far(hide)} da te: puoi nascondere un sasso solo dove ti trovi (entro ${HIDE_RADIUS_M} m).`,
+        };
+      }
+    }
     const { checkPhotoToken } = await import("./photo-token.server");
     if (!checkPhotoToken(data.token, "paint", context.userId, null, data.photo)) {
       const { checkPainted } = await import("./vision.server");

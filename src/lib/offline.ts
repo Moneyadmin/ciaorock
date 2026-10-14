@@ -8,6 +8,9 @@ export type PendingCreate = {
     lat: number;
     lng: number;
     difficulty: string;
+    /** posizione GPS del giocatore al momento della creazione */
+    fromLat?: number;
+    fromLng?: number;
   };
 };
 

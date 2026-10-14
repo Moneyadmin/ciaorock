@@ -16,7 +16,7 @@ Il browser non scrive più direttamente ritrovamenti, nuovi sassi e spostamenti:
 | --- | --- |
 | Trovare un sasso | entro **75 m** dal sasso, non è un tuo sasso, foto-prova uguale alla foto del sasso (AI) |
 | Spostare un sasso | averlo trovato (o creato), essere entro 75 m dal sasso, nuovo nascondiglio entro **150 m** da te, foto (AI) |
-| Creare un sasso | foto di un sasso dipinto (AI), campi validi |
+| Creare un sasso | nascondiglio entro **150 m** dalla tua posizione GPS (gli **admin** possono crearlo ovunque), foto di un sasso dipinto (AI), campi validi |
 
 Le soglie sono in `src/lib/rules.ts`. La migrazione `supabase/migrations/20261015090000_regole_lato_server.sql`
 blocca nel database le scritture dirette, protegge punti/ban/serie del profilo e sposta la posizione dal vivo

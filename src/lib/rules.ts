@@ -3,7 +3,10 @@
 /** Distanza massima (metri) dal sasso per registrarlo come trovato o per prenderlo e spostarlo. */
 export const FIND_RADIUS_M = 75;
 
-/** Distanza massima (metri) tra dove sei e il nuovo nascondiglio quando sposti un sasso. */
+/**
+ * Distanza massima (metri) tra dove sei e il nascondiglio quando crei o sposti un sasso.
+ * Gli admin possono creare sassi ovunque.
+ */
 export const HIDE_RADIUS_M = 150;
 
 export const DIFFICULTIES = ["Facile", "Medio", "Difficile"] as const;

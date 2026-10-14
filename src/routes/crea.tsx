@@ -16,7 +16,8 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { createRock } from "@/lib/api";
 import { clearDraft, enqueue, readDraft, saveDraft } from "@/lib/offline";
-import { DEFAULT_POSITION, compressImage, getPrecisePosition } from "@/lib/rockdex";
+import { DEFAULT_POSITION, compressImage, distanceMeters, getPrecisePosition } from "@/lib/rockdex";
+import { HIDE_RADIUS_M } from "@/lib/rules";
 import { scoreRock } from "@/lib/points.functions";
 const LEVELS = ["Facile", "Medio", "Difficile"] as const;
 import { useSession } from "@/lib/useSession";
@@ -46,7 +47,7 @@ export const Route = createFileRoute("/crea")({
 });
 
 function CreatePage() {
-  const { loading, userId, profile } = useSession();
+  const { loading, userId, profile, admin } = useSession();
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [name, setName] = useState("");
@@ -60,6 +61,8 @@ function CreatePage() {
   const [verdict, setVerdict] = useState<string | null>(null);
   const [position, setPosition] = useState(DEFAULT_POSITION);
   const [hasFix, setHasFix] = useState(false);
+  /** posizione GPS reale del telefono (il pin sulla mappa può essere spostato a mano) */
+  const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [gpsLabel, setGpsLabel] = useState("Rilevamento GPS di precisione in corso…");
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
@@ -115,6 +118,7 @@ function CreatePage() {
     getPrecisePosition()
       .then((pos) => {
         setPosition({ lat: pos.lat, lng: pos.lng });
+        setGps({ lat: pos.lat, lng: pos.lng });
         setHasFix(true);
         setGpsLabel(`GPS preciso: ±${pos.accuracy} m — sposta il pin per la posizione esatta`);
       })
@@ -128,6 +132,7 @@ function CreatePage() {
     try {
       const pos = await getPrecisePosition();
       setPosition({ lat: pos.lat, lng: pos.lng });
+      setGps({ lat: pos.lat, lng: pos.lng });
       setHasFix(true);
       setGpsLabel(`GPS preciso: ±${pos.accuracy} m`);
     } catch {
@@ -185,6 +190,17 @@ function CreatePage() {
         "Posizione non confermata: premi “Aggiorna GPS” o sposta il pin sulla mappa dove hai nascosto il sasso.",
       );
 
+    if (!admin) {
+      if (!gps)
+        return setError(
+          "Serve il GPS per nascondere un sasso: attiva la posizione e premi “Aggiorna GPS”.",
+        );
+      if (distanceMeters(gps, position) > HIDE_RADIUS_M)
+        return setError(
+          `Il pin è troppo lontano da te: puoi nascondere un sasso solo dove ti trovi (entro ${HIDE_RADIUS_M} m).`,
+        );
+    }
+
     const offline = !navigator.onLine;
     if (!offline && !approved)
       return setError(
@@ -198,6 +214,7 @@ function CreatePage() {
       lat: position.lat,
       lng: position.lng,
       difficulty,
+      ...(gps ? { fromLat: gps.lat, fromLng: gps.lng } : {}),
     };
 
     setBusy(true);
@@ -392,6 +409,19 @@ function CreatePage() {
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
               {gpsLabel}
             </p>
+            {admin ? (
+              <p className="mx-2 rounded-xl bg-ink px-3 py-2 text-xs font-bold text-ink-foreground">
+                Modalità admin: puoi mettere il sasso in qualunque punto della mappa.
+              </p>
+            ) : (
+              gps &&
+              distanceMeters(gps, position) > HIDE_RADIUS_M && (
+                <p className="mx-2 rounded-xl bg-destructive/10 px-3 py-2 text-xs font-bold text-destructive">
+                  Il pin è a {Math.round(distanceMeters(gps, position))} m da te: avvicinalo (max{" "}
+                  {HIDE_RADIUS_M} m).
+                </p>
+              )
+            )}
             <Suspense
               fallback={
                 <div className="grid h-56 place-items-center rounded-2xl bg-muted text-sm font-semibold text-muted-foreground">
