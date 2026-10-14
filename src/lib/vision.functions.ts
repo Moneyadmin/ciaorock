@@ -19,17 +19,15 @@ export type RockPhotoCheck = {
 export const verifyRockPhoto = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => Input.parse(input))
   .handler(async ({ data }): Promise<RockPhotoCheck> => {
-    const key = process.env["LOVABLE_API_KEY"];
-    if (!key) {
+    const { createOpenRouter, VISION_MODEL } = await import("./ai.server");
+    const openrouter = createOpenRouter();
+    if (!openrouter) {
       return { approved: false, message: "Servizio di verifica non disponibile. Riprova più tardi." };
     }
 
-    const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");
-    const gateway = createLovableAiGatewayProvider(key);
-
     try {
       const result = streamText({
-        model: gateway("google/gemini-3.6-flash"),
+        model: openrouter(VISION_MODEL),
         output: Output.object({ schema: Verdict }),
         messages: [
           {
@@ -91,17 +89,15 @@ function mediaTypeOf(dataUrl: string) {
 export const matchRockPhoto = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => MatchInput.parse(input))
   .handler(async ({ data }): Promise<RockPhotoCheck> => {
-    const key = process.env["LOVABLE_API_KEY"];
-    if (!key) {
+    const { createOpenRouter, VISION_MODEL } = await import("./ai.server");
+    const openrouter = createOpenRouter();
+    if (!openrouter) {
       return { approved: false, message: "Servizio di verifica non disponibile. Riprova più tardi." };
     }
 
-    const { createLovableAiGatewayProvider } = await import("./ai-gateway.server");
-    const gateway = createLovableAiGatewayProvider(key);
-
     try {
       const result = streamText({
-        model: gateway("google/gemini-3.6-flash"),
+        model: openrouter(VISION_MODEL),
         output: Output.object({ schema: MatchVerdict }),
         messages: [
           {

@@ -5,7 +5,7 @@ function inPreview() {
   } catch {
     return true;
   }
-  return /id-preview--|lovableproject\.com/.test(location.hostname);
+  return false;
 }
 
 let regPromise: Promise<ServiceWorkerRegistration | null> | null = null;

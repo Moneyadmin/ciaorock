@@ -4,28 +4,14 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function askJson<T>(schema: z.ZodType<T>, prompt: string): Promise<T> {
-  const key = process.env["LOVABLE_API_KEY"];
-  if (!key) throw new Error("Servizio AI non disponibile.");
-  const { createOpenAI } = await import("@ai-sdk/openai");
-  const provider = createOpenAI({
-    baseURL: "https://ai.gateway.lovable.dev/v1",
-    apiKey: key,
-    headers: { "Lovable-API-Key": key, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-  });
+  const { createOpenRouter, TEXT_MODEL } = await import("@/lib/ai.server");
+  const openrouter = createOpenRouter();
+  if (!openrouter) throw new Error("Servizio AI non disponibile.");
   const result = streamText({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    model: provider.responses("openai/gpt-6-astra") as any,
+    model: openrouter(TEXT_MODEL),
     output: Output.object({ schema }),
     prompt,
-    providerOptions: {
-      openai: {
-        store: false,
-        forceReasoning: true,
-        reasoningEffort: "low",
-        reasoningSummary: "auto",
-        include: ["reasoning.encrypted_content"],
-      },
-    },
+    providerOptions: { openrouter: { reasoning: { effort: "low" } } },
   });
   return (await result.output) as T;
 }
