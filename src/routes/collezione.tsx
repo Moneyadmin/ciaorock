@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Award, Flame, Gem, Loader2, Lock, LogOut, MapPin, Shield, Sparkles } from "lucide-react";
+import { Award, Flame, Gem, GraduationCap, Loader2, Lock, LogOut, MapPin, Shield, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { NotificationSettings } from "@/components/NotificationSettings";
+import { Tutorial } from "@/components/Tutorial";
 import { BADGES, CATEGORY_LABELS, earnedBadgeIds, type BadgeCategory } from "@/lib/badges";
 import { countCreated, fetchMyFinds } from "@/lib/api";
 import { useSession } from "@/lib/useSession";
@@ -33,6 +34,7 @@ function CollectionPage() {
   const { loading, userId, profile, admin, signOut } = useSession();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"collezione" | "traguardi">("collezione");
+  const [tutorial, setTutorial] = useState(false);
 
   useEffect(() => {
     if (!loading && (!userId || !profile)) navigate({ to: "/auth" });
@@ -207,11 +209,20 @@ function CollectionPage() {
       {admin && (
         <button
           onClick={() => navigate({ to: "/admin" })}
-          className="press mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-ink py-3.5 text-sm font-extrabold text-ink-foreground"
+          className="press mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-ink py-3.5 text-sm font-extrabold text-ink-foreground"
         >
           <Shield className="h-4 w-4" /> Pannello admin
         </button>
       )}
+
+      {tutorial && userId && <Tutorial userId={userId} onClose={() => setTutorial(false)} />}
+
+      <button
+        onClick={() => setTutorial(true)}
+        className="press mt-6 flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary py-3.5 text-sm font-extrabold text-secondary-foreground"
+      >
+        <GraduationCap className="h-4 w-4" /> Rivedi il tutorial
+      </button>
 
       <button
         onClick={logout}

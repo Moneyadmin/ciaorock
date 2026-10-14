@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { Tutorial, tutorialPending } from "@/components/Tutorial";
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchDoubleDays,
@@ -92,6 +93,12 @@ function MapPage() {
   const [bonus, setBonus] = useState(1);
 
   useEffect(() => setMounted(true), []);
+  const [tutorial, setTutorial] = useState(false);
+
+  // Primo accesso: mostra il tutorial una volta sola (per utente, su questo dispositivo).
+  useEffect(() => {
+    if (userId && profile?.nickname && tutorialPending(userId)) setTutorial(true);
+  }, [userId, profile?.nickname]);
   const [friends, setFriends] = useState<FriendLocation[]>([]);
 
   // Posizione in tempo reale: segue il GPS e la salva sul profilo (max ogni 10s).
@@ -354,7 +361,8 @@ function MapPage() {
           />
         )}
 
-        {mounted && <InstallPrompt />}
+        {tutorial && userId && <Tutorial userId={userId} onClose={() => setTutorial(false)} />}
+        {mounted && !tutorial && <InstallPrompt />}
       </div>
     </AppShell>
   );
