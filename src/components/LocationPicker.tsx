@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
+import { addBasemap } from "@/lib/basemap";
+import { rockPinHtml } from "@/lib/pins";
 
 type Props = {
   value: { lat: number; lng: number };
@@ -23,18 +25,19 @@ export default function LocationPicker({ value, onChange }: Props) {
       const map = L.map(containerRef.current, {
         center: [value.lat, value.lng],
         zoom: 18,
-        zoomControl: true,
+        maxZoom: 19,
+        zoomControl: false,
         attributionControl: false,
       });
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", { maxZoom: 19 }).addTo(map);
+      void addBasemap(L, map);
 
       const marker = L.marker([value.lat, value.lng], {
         draggable: true,
         icon: L.divIcon({
           className: "",
-          html: '<div class="rock-pin">🪨</div>',
-          iconSize: [40, 40],
-          iconAnchor: [20, 20],
+          html: rockPinHtml({ found: false }),
+          iconSize: [44, 52],
+          iconAnchor: [22, 50],
         }),
       }).addTo(map);
 
@@ -73,5 +76,5 @@ export default function LocationPicker({ value, onChange }: Props) {
     };
   }, []);
 
-  return <div ref={containerRef} className="h-56 w-full overflow-hidden rounded-2xl" />;
+  return <div ref={containerRef} className="h-56 w-full overflow-hidden rounded-2xl ring-1 ring-border" />;
 }

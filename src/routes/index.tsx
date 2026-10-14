@@ -3,6 +3,21 @@ import { submitRockRating } from "@/lib/points.functions";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Suspense, lazy, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Camera,
+  CheckCircle2,
+  Gem,
+  Lightbulb,
+  Loader2,
+  MapPin,
+  Navigation,
+  Repeat2,
+  ScanSearch,
+  Star,
+  Trophy,
+  WifiOff,
+  Zap,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +44,7 @@ import {
 import { flushQueue } from "@/lib/sync";
 import { saveMyLocation, fetchFriendLocations, type FriendLocation } from "@/lib/api";
 import { useSession } from "@/lib/useSession";
+import { avatarGradient, initialOf } from "@/lib/pins";
 import { matchRockPhoto, verifyRockPhoto } from "@/lib/vision.functions";
 
 const MapView = lazy(() => import("@/components/MapView"));
@@ -247,7 +263,7 @@ function MapPage() {
 
   return (
     <AppShell title="Mappa" bare>
-      <div className="relative h-[100vh] w-full">
+      <div className="relative h-[100dvh] w-full">
         <div className="absolute inset-0">
           {mounted ? (
             <Suspense fallback={<MapSkeleton />}>
@@ -274,32 +290,50 @@ function MapPage() {
           )}
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 top-0 z-[900] space-y-2 p-4">
-          <div className="pebble-card pointer-events-auto flex items-center justify-between px-4 py-3">
-            <div>
-              <p className="text-lg font-bold leading-tight">Ciao {nickname} 👋</p>
-              <p className="text-xs text-muted-foreground">
-                {visible} sassi in questa zona · {rocks.length} totali · {foundIds.length} trovati
-              </p>
-            </div>
-            <span className="grid h-11 w-11 place-items-center rounded-full bg-secondary text-2xl">
-              🪨
+        <div className="pointer-events-none absolute inset-x-0 top-0 z-[900] space-y-2 p-3 pt-[max(0.75rem,env(safe-area-inset-top))]">
+          <div className="glass pointer-events-auto flex items-center gap-3 rounded-[1.6rem] p-2.5 pr-4">
+            <span
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl font-display text-xl text-white"
+              style={{ background: avatarGradient(nickname || "?") }}
+            >
+              {initialOf(nickname || "?")}
             </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-display text-xl leading-tight">Ciao {nickname}!</p>
+              <div className="mt-1 flex flex-wrap gap-1.5 text-[11px] font-bold">
+                <span className="inline-flex items-center gap-1 rounded-full bg-secondary px-2 py-0.5 text-secondary-foreground">
+                  <MapPin className="h-3 w-3" strokeWidth={2.6} />
+                  {visible} qui
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-muted-foreground">
+                  <Gem className="h-3 w-3" strokeWidth={2.6} />
+                  {rocks.length} totali
+                </span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-moss/15 px-2 py-0.5 text-[oklch(0.45_0.12_162)]">
+                  <CheckCircle2 className="h-3 w-3" strokeWidth={2.6} />
+                  {foundIds.length} trovati
+                </span>
+              </div>
+            </div>
           </div>
           {bonus > 1 && (
-            <div className="pebble-card pointer-events-auto px-4 py-2 text-xs font-bold text-foreground">
-              🎉 Ciao! Oggi ti regalo un x{bonus} su tutti i punti che guadagni.
+            <div className="pointer-events-auto flex items-center gap-2 rounded-2xl bg-lime px-3.5 py-2.5 text-xs font-extrabold text-lime-foreground shadow-pebble">
+              <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ink text-lime">
+                <Zap className="h-4 w-4" fill="currentColor" />
+              </span>
+              Giornata speciale: oggi tutti i punti valgono x{bonus}!
             </div>
           )}
           {(!online || pending > 0) && (
-            <div className="pebble-card pointer-events-auto px-4 py-2 text-xs font-semibold text-muted-foreground">
+            <div className="glass pointer-events-auto flex items-center gap-2 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-muted-foreground">
+              <WifiOff className="h-4 w-4 shrink-0" />
               {online
-                ? `📡 ${pending} azione in attesa di sincronizzazione`
-                : "📴 Modalità offline: le tue azioni verranno salvate e inviate al ritorno del segnale"}
+                ? `${pending} azione in attesa di sincronizzazione`
+                : "Modalità offline: le tue azioni verranno salvate e inviate al ritorno del segnale"}
             </div>
           )}
           {toast && (
-            <div className="pebble-card pointer-events-auto px-4 py-2 text-xs font-bold text-foreground">
+            <div className="pointer-events-auto animate-in fade-in slide-in-from-top-2 rounded-2xl bg-ink px-4 py-3 text-xs font-bold text-ink-foreground shadow-lift">
               {toast}
             </div>
           )}
@@ -328,8 +362,10 @@ function MapPage() {
 
 function MapSkeleton() {
   return (
-    <div className="grid h-full w-full place-items-center bg-muted text-sm text-muted-foreground">
-      Caricamento mappa…
+    <div className="grid h-full w-full place-items-center bg-muted text-sm font-semibold text-muted-foreground">
+      <span className="inline-flex items-center gap-2">
+        <Loader2 className="h-4 w-4 animate-spin" /> Caricamento mappa…
+      </span>
     </div>
   );
 }
@@ -499,30 +535,51 @@ function RockSheet({
     const finish = (msg: string) =>
       onDone(`Hai trovato “${rock.name}”! 🎉 +${rock.points} punti. ${msg}`);
     return (
-      <div className="absolute inset-0 z-[900] grid place-items-center bg-foreground/40 p-6">
-        <div className="pebble-card w-full max-w-sm space-y-4 bg-card p-6 text-center">
-          <h2 className="text-xl font-bold">Valuta la difficoltà di questo nascondiglio</h2>
+      <div className="absolute inset-0 z-[950] grid place-items-center bg-ink/50 p-5 backdrop-blur-sm">
+        <div className="pebble-card w-full max-w-sm space-y-4 rounded-[2rem] bg-card p-6 text-center animate-in zoom-in-95 fade-in">
+          <span className="bg-brand mx-auto grid h-16 w-16 place-items-center rounded-3xl text-white shadow-glow">
+            <Trophy className="h-8 w-8" strokeWidth={2.4} />
+          </span>
+          <h2 className="text-2xl leading-tight">Quanto era difficile trovarlo?</h2>
           <p className="text-sm text-muted-foreground">0 stelle = banale · 5 stelle = difficilissimo</p>
-          <div className="flex justify-center gap-1 text-4xl">
-            {[0, 1, 2, 3, 4, 5].map((n) => (
-              <button
-                key={n}
-                type="button"
-                aria-label={`${n} stelle`}
-                disabled={busy}
-                onClick={() => setStars(n)}
-                className={n === 0 ? "text-2xl" : ""}
-              >
-                {n === 0 ? (stars === 0 ? "⓪" : "0") : stars != null && n <= stars ? "★" : "☆"}
-              </button>
-            ))}
+          <div className="flex items-center justify-center gap-1.5">
+            {[0, 1, 2, 3, 4, 5].map((n) => {
+              const on = stars != null && n <= stars && n > 0;
+              return (
+                <button
+                  key={n}
+                  type="button"
+                  aria-label={`${n} stelle`}
+                  aria-pressed={stars === n}
+                  disabled={busy}
+                  onClick={() => setStars(n)}
+                  className={
+                    n === 0
+                      ? `press mr-1 grid h-9 w-9 place-items-center rounded-full text-sm font-extrabold ${
+                          stars === 0 ? "bg-ink text-white" : "bg-muted text-muted-foreground"
+                        }`
+                      : "press"
+                  }
+                >
+                  {n === 0 ? (
+                    "0"
+                  ) : (
+                    <Star
+                      className={`h-9 w-9 ${on ? "text-sun" : "text-border"}`}
+                      fill="currentColor"
+                      strokeWidth={1.5}
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
           <textarea
             value={feedback}
             onChange={(e) => setFeedback(e.target.value.slice(0, 500))}
             rows={3}
             placeholder="Com'è stato trovarlo? es. “banale, era in piena vista” oppure “difficilissimo, mimetizzato tra i sassi”"
-            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm outline-none focus:border-ring"
+            className="w-full rounded-2xl border border-input bg-background px-4 py-3 text-sm outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
           />
           <button
             type="button"
@@ -537,12 +594,12 @@ function RockSheet({
                 finish("Voto non salvato.");
               }
             }}
-            className="w-full rounded-xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50"
+            className="press bg-brand w-full rounded-2xl py-3.5 font-extrabold text-white shadow-glow disabled:opacity-50"
           >
             {busy ? "Invio…" : "Invia valutazione"}
           </button>
           <p className="text-xs text-muted-foreground">Dopo almeno 3 voti, i punti del sasso salgono o scendono in base a stelle e commenti.</p>
-          <button type="button" onClick={() => finish("")} className="text-sm font-bold text-muted-foreground">
+          <button type="button" onClick={() => finish("")} className="press text-sm font-bold text-muted-foreground">
             Salta
           </button>
         </div>
@@ -551,50 +608,73 @@ function RockSheet({
   }
 
   return (
-    <div className="absolute inset-0 z-[850] flex items-end bg-foreground/30" onClick={onClose}>
+    <div
+      className="absolute inset-0 z-[950] flex items-end bg-ink/40 backdrop-blur-[2px] animate-in fade-in"
+      onClick={onClose}
+    >
       <div
-        className="max-h-[88vh] w-full overflow-y-auto rounded-t-[2rem] border-t border-border bg-card p-5 pb-28 shadow-lift"
+        className="max-h-[90dvh] w-full overflow-y-auto rounded-t-[2.25rem] bg-card p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-lift animate-in slide-in-from-bottom-10 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-border" />
-        {photo ? (
-          <img
-            src={photo}
-            alt={`Sasso dipinto: ${rock.name}`}
-            className="mb-4 h-44 w-full rounded-2xl object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="mb-4 grid h-44 w-full place-items-center rounded-2xl bg-muted text-sm text-muted-foreground">
-            Caricamento foto…
-          </div>
-        )}
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-bold leading-tight">{rock.name}</h2>
-            <p className="text-sm text-muted-foreground">
-              Creato da {rock.creator_nickname}
+        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-border" />
+        <div className="relative">
+          {photo ? (
+            <img
+              src={photo}
+              alt={`Sasso dipinto: ${rock.name}`}
+              className="h-52 w-full rounded-[1.6rem] object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="grid h-52 w-full place-items-center rounded-[1.6rem] bg-muted text-sm font-semibold text-muted-foreground">
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Caricamento foto…
+              </span>
+            </div>
+          )}
+          <span className="bg-brand absolute right-3 top-3 rounded-full px-3 py-1.5 font-display text-sm text-white shadow-glow">
+            {rock.points} pt
+          </span>
+          {found && (
+            <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-moss px-3 py-1.5 text-xs font-extrabold text-white">
+              <CheckCircle2 className="h-3.5 w-3.5" strokeWidth={3} /> Trovato
+            </span>
+          )}
+        </div>
+        <div className="mt-4 flex items-start justify-between gap-3 px-1">
+          <div className="min-w-0">
+            <h2 className="text-[1.75rem] leading-tight">{rock.name}</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Creato da <span className="font-bold text-foreground">@{rock.creator_nickname}</span>
               {rock.hider_nickname && rock.hider_nickname !== rock.creator_nickname
-                ? ` · nascosto da ${rock.hider_nickname}`
+                ? ` · nascosto da @${rock.hider_nickname}`
                 : ""}
             </p>
           </div>
-          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-secondary-foreground">
-            {rock.difficulty} · {rock.points}pt
+          <DifficultyChip level={rock.difficulty} />
+        </div>
+
+        <div className="mt-4 flex gap-3 rounded-[1.4rem] bg-secondary p-4">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground">
+            <Lightbulb className="h-5 w-5" strokeWidth={2.4} />
           </span>
+          <div>
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-secondary-foreground">
+              Indizio
+            </p>
+            <p className="mt-0.5 text-[15px] font-medium leading-snug">{rock.clue}</p>
+          </div>
         </div>
 
-        <div className="mt-4 rounded-2xl bg-muted p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Indizio</p>
-          <p className="mt-1 text-sm">{rock.clue}</p>
-        </div>
-
-        <div className="mt-3 flex flex-wrap gap-3 text-sm font-semibold text-foreground">
-          <span>📍 {formatDistance(distanceMeters(me, rock))}</span>
-          <span>🔁 spostato {rock.move_count} volte</span>
-          <span>🏆 trovato {rock.found_count} volte</span>
+        <div className="mt-3 grid grid-cols-2 gap-2 text-[13px] font-bold">
+          <StatChip icon={<Navigation className="h-4 w-4" />} label={formatDistance(distanceMeters(me, rock))} />
+          <StatChip icon={<Trophy className="h-4 w-4" />} label={`Trovato ${rock.found_count} volte`} />
+          <StatChip icon={<Repeat2 className="h-4 w-4" />} label={`Spostato ${rock.move_count} volte`} />
           {rock.rating_count > 0 && rock.rating_avg != null && (
-            <span>⭐ {rock.rating_avg.toFixed(1)} ({rock.rating_count} voti)</span>
+            <StatChip
+              icon={<Star className="h-4 w-4 text-sun" fill="currentColor" />}
+              label={`${rock.rating_avg.toFixed(1)} (${rock.rating_count} voti)`}
+            />
           )}
         </div>
 
@@ -603,13 +683,17 @@ function RockSheet({
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="grid h-40 w-full place-items-center overflow-hidden rounded-2xl border-2 border-dashed border-border bg-muted"
+              className="press grid h-44 w-full place-items-center overflow-hidden rounded-[1.4rem] border-2 border-dashed border-primary/35 bg-secondary/60"
             >
               {proof ? (
                 <img src={proof} alt="Foto-prova" className="h-full w-full object-cover" />
               ) : (
-                <span className="px-6 text-center text-sm text-muted-foreground">
-                  📷 Tocca per scattare la foto{mode === "find" ? "-prova del ritrovamento" : " del nuovo nascondiglio"}
+                <span className="flex flex-col items-center gap-2 px-6 text-center text-sm font-semibold text-secondary-foreground">
+                  <span className="bg-brand grid h-12 w-12 place-items-center rounded-2xl text-white shadow-glow">
+                    <Camera className="h-6 w-6" />
+                  </span>
+                  Tocca per scattare la foto
+                  {mode === "find" ? "-prova del ritrovamento" : " del nuovo nascondiglio"}
                 </span>
               )}
             </button>
@@ -624,15 +708,21 @@ function RockSheet({
 
             {(checking || verdict) && (
               <div
-                className={`rounded-xl p-3 text-sm font-semibold ${
+                className={`flex items-start gap-2 rounded-2xl p-3 text-sm font-semibold ${
                   checking
                     ? "bg-muted text-muted-foreground"
                     : approved
-                      ? "bg-primary/10 text-foreground"
+                      ? "bg-moss/15 text-foreground"
                       : "bg-destructive/10 text-destructive"
                 }`}
               >
-                {checking ? "🔍 Verifica AI della foto in corso…" : verdict}
+                {checking ? (
+                  <>
+                    <ScanSearch className="mt-0.5 h-4 w-4 shrink-0 animate-pulse" /> Verifica AI della foto in corso…
+                  </>
+                ) : (
+                  verdict
+                )}
               </div>
             )}
 
@@ -645,7 +735,7 @@ function RockSheet({
                   onChange={(e) => setClue(e.target.value)}
                   rows={3}
                   placeholder="Nuovo indizio per il nuovo nascondiglio"
-                  className="w-full rounded-xl border border-input bg-background px-4 py-3 text-base outline-none focus:border-ring"
+                  className="w-full rounded-2xl border border-input bg-background px-4 py-3 text-base outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
                 />
                 <Suspense
                   fallback={
@@ -674,7 +764,7 @@ function RockSheet({
                   setApproved(false);
                   setVerdict(null);
                 }}
-                className="flex-1 rounded-xl border border-border bg-card py-3 text-sm font-bold text-muted-foreground"
+                className="press flex-1 rounded-2xl bg-muted py-3.5 text-sm font-extrabold text-muted-foreground"
               >
                 Annulla
               </button>
@@ -682,7 +772,7 @@ function RockSheet({
                 type="button"
                 disabled={busy}
                 onClick={() => void (mode === "find" ? confirmFind() : confirmMove())}
-                className="flex-1 rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground shadow-pebble disabled:opacity-60"
+                className="press bg-brand flex-[1.4] rounded-2xl py-3.5 text-sm font-extrabold text-white shadow-glow disabled:opacity-60"
               >
                 {busy ? "Invio…" : mode === "find" ? "Conferma ritrovamento" : "Conferma spostamento"}
               </button>
@@ -696,20 +786,55 @@ function RockSheet({
               type="button"
               onClick={() => setMode("find")}
               disabled={found}
-              className="w-full rounded-xl bg-primary py-3 text-base font-bold text-primary-foreground shadow-pebble disabled:bg-muted disabled:text-muted-foreground"
+              className="press bg-brand flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-extrabold text-white shadow-glow disabled:bg-none disabled:bg-moss/15 disabled:text-[oklch(0.45_0.12_162)] disabled:shadow-none"
             >
-              {found ? "Già trovato ✅" : "L'ho trovato! (con foto-prova)"}
+              {found ? (
+                <>
+                  <CheckCircle2 className="h-5 w-5" strokeWidth={2.6} /> Già trovato
+                </>
+              ) : (
+                <>
+                  <Camera className="h-5 w-5" strokeWidth={2.6} /> L'ho trovato! (con foto-prova)
+                </>
+              )}
             </button>
             <button
               type="button"
               onClick={() => setMode("move")}
-              className="w-full rounded-xl border border-border bg-card py-3 text-base font-bold text-foreground"
+              className="press flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary py-4 text-base font-extrabold text-secondary-foreground"
             >
-              🔁 Sposta / nascondi di nuovo
+              <Repeat2 className="h-5 w-5" strokeWidth={2.6} /> Sposta / nascondi di nuovo
             </button>
           </div>
         )}
       </div>
     </div>
+  );
+}
+
+function StatChip({ icon, label }: { icon: React.ReactNode; label: string }) {
+  return (
+    <span className="flex items-center gap-2 rounded-2xl bg-muted px-3 py-2.5 text-foreground">
+      <span className="text-primary">{icon}</span>
+      <span className="truncate">{label}</span>
+    </span>
+  );
+}
+
+const DIFFICULTY_STYLE: Record<string, string> = {
+  Facile: "bg-moss/15 text-[oklch(0.45_0.12_162)]",
+  Medio: "bg-sun/25 text-[oklch(0.45_0.11_70)]",
+  Difficile: "bg-paint/15 text-paint",
+};
+
+function DifficultyChip({ level }: { level: string }) {
+  return (
+    <span
+      className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-extrabold ${
+        DIFFICULTY_STYLE[level] ?? "bg-secondary text-secondary-foreground"
+      }`}
+    >
+      {level}
+    </span>
   );
 }

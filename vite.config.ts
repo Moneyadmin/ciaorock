@@ -32,5 +32,8 @@ export default defineConfig(({ command }) => ({
       "@tanstack/query-core",
     ],
   },
+  // Pre-bundle the map libraries together, otherwise the lazily-loaded Leaflet plugin
+  // can end up with a different Leaflet chunk than the map in dev mode.
+  optimizeDeps: { include: ["leaflet", "maplibre-gl", "@maplibre/maplibre-gl-leaflet"] },
   server: { port: 3000 },
 }));

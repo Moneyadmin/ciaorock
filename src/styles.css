@@ -19,16 +19,23 @@
  */
 
 @theme inline {
-  --font-display: "Baloo 2", ui-rounded, system-ui, sans-serif;
-  --font-sans: "Nunito", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bricolage Grotesque", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --color-moss: var(--moss);
   --color-moss-foreground: var(--moss-foreground);
   --color-paint: var(--paint);
   --color-paint-foreground: var(--paint-foreground);
   --color-stone: var(--stone);
   --color-stone-foreground: var(--stone-foreground);
-  --shadow-pebble: 0 10px 24px -12px oklch(0.35 0.05 80 / 0.45);
-  --shadow-lift: 0 18px 40px -20px oklch(0.3 0.05 80 / 0.55);
+  --color-lime: var(--lime);
+  --color-lime-foreground: var(--lime-foreground);
+  --color-ink: var(--ink);
+  --color-ink-foreground: var(--ink-foreground);
+  --color-sky: var(--sky);
+  --color-sun: var(--sun);
+  --shadow-pebble: 0 1px 2px oklch(0.25 0.08 285 / 0.06), 0 12px 32px -16px oklch(0.35 0.15 285 / 0.35);
+  --shadow-lift: 0 2px 4px oklch(0.25 0.08 285 / 0.08), 0 24px 48px -20px oklch(0.3 0.18 285 / 0.45);
+  --shadow-glow: 0 10px 30px -10px oklch(0.56 0.25 285 / 0.65);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -73,45 +80,53 @@
 }
 
 :root {
-  --radius: 1.1rem;
-  --background: oklch(0.972 0.017 85);
-  --foreground: oklch(0.28 0.035 60);
-  --card: oklch(0.995 0.008 90);
-  --card-foreground: oklch(0.28 0.035 60);
-  --popover: oklch(0.995 0.008 90);
-  --popover-foreground: oklch(0.28 0.035 60);
-  --primary: oklch(0.52 0.13 145);
-  --primary-foreground: oklch(0.985 0.012 120);
-  --secondary: oklch(0.93 0.03 80);
-  --secondary-foreground: oklch(0.32 0.04 60);
-  --muted: oklch(0.94 0.02 85);
-  --muted-foreground: oklch(0.52 0.03 70);
-  --accent: oklch(0.78 0.16 55);
-  --accent-foreground: oklch(0.25 0.04 50);
-  --destructive: oklch(0.58 0.2 25);
-  --destructive-foreground: oklch(0.985 0.01 90);
-  --border: oklch(0.88 0.025 80);
-  --input: oklch(0.88 0.025 80);
-  --ring: oklch(0.52 0.13 145);
-  --moss: oklch(0.42 0.1 148);
-  --moss-foreground: oklch(0.98 0.01 120);
-  --paint: oklch(0.66 0.19 25);
-  --paint-foreground: oklch(0.99 0.01 90);
-  --stone: oklch(0.62 0.02 80);
-  --stone-foreground: oklch(0.99 0.01 90);
-  --chart-1: oklch(0.52 0.13 145);
-  --chart-2: oklch(0.78 0.16 55);
-  --chart-3: oklch(0.66 0.19 25);
-  --chart-4: oklch(0.62 0.02 80);
-  --chart-5: oklch(0.42 0.1 148);
-  --sidebar: oklch(0.972 0.017 85);
-  --sidebar-foreground: oklch(0.28 0.035 60);
-  --sidebar-primary: oklch(0.52 0.13 145);
-  --sidebar-primary-foreground: oklch(0.985 0.012 120);
-  --sidebar-accent: oklch(0.93 0.03 80);
-  --sidebar-accent-foreground: oklch(0.32 0.04 60);
-  --sidebar-border: oklch(0.88 0.025 80);
-  --sidebar-ring: oklch(0.52 0.13 145);
+  --radius: 1rem;
+  --background: oklch(0.975 0.008 290);
+  --foreground: oklch(0.2 0.035 285);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.2 0.035 285);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.035 285);
+  --primary: oklch(0.55 0.25 285);
+  --primary-foreground: oklch(0.99 0.005 285);
+  --secondary: oklch(0.94 0.035 290);
+  --secondary-foreground: oklch(0.38 0.16 285);
+  --muted: oklch(0.955 0.012 290);
+  --muted-foreground: oklch(0.5 0.03 285);
+  --accent: oklch(0.92 0.2 125);
+  --accent-foreground: oklch(0.22 0.04 285);
+  --destructive: oklch(0.6 0.23 18);
+  --destructive-foreground: oklch(0.99 0.005 18);
+  --border: oklch(0.91 0.015 290);
+  --input: oklch(0.89 0.02 290);
+  --ring: oklch(0.55 0.25 285);
+  /* "moss" = verde menta di successo (sasso trovato, verifiche ok) */
+  --moss: oklch(0.7 0.17 162);
+  --moss-foreground: oklch(0.99 0.01 162);
+  /* "paint" = rosa shocking, il colore della vernice */
+  --paint: oklch(0.66 0.25 355);
+  --paint-foreground: oklch(0.99 0.01 355);
+  --stone: oklch(0.6 0.03 285);
+  --stone-foreground: oklch(0.99 0.005 285);
+  --lime: oklch(0.92 0.2 125);
+  --lime-foreground: oklch(0.22 0.04 285);
+  --ink: oklch(0.2 0.035 285);
+  --ink-foreground: oklch(0.98 0.005 285);
+  --sky: oklch(0.75 0.14 230);
+  --sun: oklch(0.85 0.17 85);
+  --chart-1: oklch(0.55 0.25 285);
+  --chart-2: oklch(0.66 0.25 355);
+  --chart-3: oklch(0.7 0.17 162);
+  --chart-4: oklch(0.85 0.17 85);
+  --chart-5: oklch(0.75 0.14 230);
+  --sidebar: oklch(0.975 0.008 290);
+  --sidebar-foreground: oklch(0.2 0.035 285);
+  --sidebar-primary: oklch(0.55 0.25 285);
+  --sidebar-primary-foreground: oklch(0.99 0.005 285);
+  --sidebar-accent: oklch(0.94 0.035 290);
+  --sidebar-accent-foreground: oklch(0.38 0.16 285);
+  --sidebar-border: oklch(0.91 0.015 290);
+  --sidebar-ring: oklch(0.55 0.25 285);
 }
 
 @layer base {
@@ -119,11 +134,16 @@
     border-color: var(--color-border);
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
     -webkit-tap-highlight-color: transparent;
+    -webkit-font-smoothing: antialiased;
   }
 
   h1,
@@ -131,7 +151,13 @@
   h3,
   .font-display {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+  }
+
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
   }
 }
 
@@ -142,28 +168,59 @@
   box-shadow: var(--shadow-pebble);
 }
 
+@utility glass {
+  background-color: oklch(1 0 0 / 0.82);
+  border: 1px solid oklch(1 0 0 / 0.7);
+  box-shadow: var(--shadow-lift);
+  -webkit-backdrop-filter: blur(18px) saturate(1.6);
+  backdrop-filter: blur(18px) saturate(1.6);
+}
+
+@utility bg-brand {
+  background-image: linear-gradient(135deg, var(--color-primary) 0%, var(--color-paint) 100%);
+}
+
+@utility text-brand {
+  background-image: linear-gradient(120deg, var(--color-primary) 10%, var(--color-paint) 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@utility press {
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+  &:active:not(:disabled) {
+    transform: scale(0.97);
+  }
+}
+
 @utility app-frame {
   margin-inline: auto;
   width: 100%;
   max-width: 28rem;
   min-height: 100vh;
-  padding-bottom: 5.5rem;
+  min-height: 100dvh;
+  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom));
   position: relative;
 }
 
-/* Leaflet sizing + control tweaks (base CSS comes from the leaflet package) */
+/* ---------- Mappa (Leaflet + base vettoriale MapLibre) ---------- */
 .leaflet-container {
   height: 100%;
   width: 100%;
-  background: var(--color-muted);
+  background: oklch(0.955 0.012 290);
   font-family: var(--font-sans);
 }
 .leaflet-control-attribution {
-  background: oklch(1 0 0 / 0.7);
-  padding: 0 5px;
-  font-size: 10px;
+  background: oklch(1 0 0 / 0.75) !important;
+  padding: 1px 6px !important;
+  font-size: 9px;
   color: var(--color-muted-foreground);
-  border-radius: 6px;
+  border-radius: 8px 0 0 0;
 }
 .leaflet-control-attribution a {
   color: inherit;
@@ -171,57 +228,129 @@
 .leaflet-control-zoom {
   display: none;
 }
+/* Sulla mappa a schermo intero l'attribuzione sta sopra la barra di navigazione */
+.map-fullscreen .leaflet-bottom {
+  bottom: calc(5.75rem + env(safe-area-inset-bottom));
+}
+.leaflet-popup-content-wrapper {
+  border-radius: 16px;
+  box-shadow: var(--shadow-lift);
+  font-family: var(--font-sans);
+}
+.leaflet-popup-content {
+  margin: 10px 14px;
+  font-size: 13px;
+}
 
+/* Pin del sasso: goccia con gradiente e "sasso dipinto" al centro */
 .rock-pin {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  font-size: 22px;
-  border-radius: 999px;
-  background: var(--color-card);
-  border: 2px solid var(--color-moss);
-  box-shadow: var(--shadow-pebble);
+  position: relative;
+  width: 44px;
+  height: 52px;
+  filter: drop-shadow(0 6px 8px oklch(0.3 0.18 285 / 0.35));
+  transition: transform 160ms ease;
+}
+.rock-pin svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .rock-pin.is-found {
-  border-color: var(--color-accent);
-  opacity: 0.75;
+  filter: drop-shadow(0 4px 6px oklch(0.3 0.1 162 / 0.3));
 }
 .rock-pin.is-dragging {
-  border-color: var(--color-paint);
-  border-width: 3px;
-  transform: scale(1.15);
-  animation: rock-pin-pulse 1s ease-in-out infinite;
+  animation: rock-pin-pulse 0.9s ease-in-out infinite;
 }
 @keyframes rock-pin-pulse {
   50% {
-    transform: scale(1.25);
+    transform: translateY(-6px) scale(1.12);
   }
 }
-.me-pin {
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: var(--color-paint);
-  border: 3px solid var(--color-card);
-  box-shadow: var(--shadow-pebble);
-}
 
+/* La mia posizione: punto con alone pulsante */
+.me-pin {
+  position: relative;
+  width: 22px;
+  height: 22px;
+}
+.me-pin::before {
+  content: "";
+  position: absolute;
+  inset: -14px;
+  border-radius: 999px;
+  background: oklch(0.55 0.25 285 / 0.22);
+  animation: me-halo 2.2s ease-out infinite;
+}
+.me-pin::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--color-primary);
+  border: 4px solid white;
+  box-shadow: 0 2px 8px oklch(0.3 0.18 285 / 0.5);
+}
+@keyframes me-halo {
+  0% {
+    transform: scale(0.4);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
 
 .cluster-pin {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  font-size: 16px;
+  width: 46px;
+  height: 46px;
+  font-family: var(--font-display);
+  font-size: 17px;
   font-weight: 800;
-  color: var(--color-card);
+  color: var(--color-lime);
   border-radius: 999px;
-  background: var(--color-moss);
-  border: 3px solid var(--color-card);
-  box-shadow: var(--shadow-lift);
+  background: var(--color-ink);
+  border: 3px solid white;
+  box-shadow:
+    0 0 0 5px oklch(0.55 0.25 285 / 0.28),
+    var(--shadow-lift);
 }
 
-.friend-pin { display:flex; flex-direction:column; align-items:center; gap:2px; }
-.friend-name { font-size:11px; font-weight:700; padding:1px 6px; border-radius:999px; background:var(--card); color:var(--foreground); border:1px solid var(--border); white-space:nowrap; box-shadow:0 1px 3px rgb(0 0 0 / .25); }
-.friend-avatar { display:grid; place-items:center; width:32px; height:32px; border-radius:999px; background:var(--primary); border:2px solid var(--background); font-size:18px; }
+.friend-pin {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.friend-avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 3px solid white;
+  color: white;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  box-shadow: var(--shadow-lift);
+}
+.friend-name {
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--color-ink);
+  color: white;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .me-pin::before,
+  .rock-pin.is-dragging {
+    animation: none;
+  }
+}

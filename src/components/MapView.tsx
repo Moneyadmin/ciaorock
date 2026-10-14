@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import type { RockRow, FriendLocation } from "@/lib/api";
+import { addBasemap } from "@/lib/basemap";
+import { avatarGradient, initialOf, rockPinHtml } from "@/lib/pins";
 
 type Props = {
   rocks: RockRow[];
@@ -80,7 +82,7 @@ export default function MapView(props: Props) {
     layer.clearLayers();
 
     L.marker([mine.lat, mine.lng], {
-      icon: L.divIcon({ className: "", html: '<div class="me-pin"></div>', iconSize: [18, 18] }),
+      icon: L.divIcon({ className: "", html: '<div class="me-pin"></div>', iconSize: [22, 22] }),
       interactive: false, // non deve coprire i sassi che stanno nella stessa posizione
       zIndexOffset: -1000,
     }).addTo(layer);
@@ -90,14 +92,14 @@ export default function MapView(props: Props) {
       L.marker([f.lat, f.lng], {
         icon: L.divIcon({
           className: "",
-          html: `<div class="friend-pin"><span class="friend-name">${esc(f.nickname)}</span><span class="friend-avatar">👤</span></div>`,
-          iconSize: [40, 56],
-          iconAnchor: [20, 50],
+          html: `<div class="friend-pin"><span class="friend-avatar" style="background:${avatarGradient(f.nickname)}">${esc(initialOf(f.nickname))}</span><span class="friend-name">${esc(f.nickname)}</span></div>`,
+          iconSize: [80, 62],
+          iconAnchor: [40, 20],
         }),
         zIndexOffset: 500,
       })
         .addTo(layer)
-        .bindPopup(`<strong>${esc(f.nickname)}</strong><br/>In esplorazione!`);
+        .bindPopup(`<strong>@${esc(f.nickname)}</strong><br/>In esplorazione!`);
     }
 
     const bounds = map.getBounds();
@@ -113,9 +115,9 @@ export default function MapView(props: Props) {
         const marker = L.marker([rock.lat, rock.lng], {
           icon: L.divIcon({
             className: "",
-            html: `<div class="rock-pin ${isFound ? "is-found" : ""} ${armed ? "is-dragging" : ""}">${isFound ? "✅" : "🪨"}</div>`,
-            iconSize: [40, 40],
-            iconAnchor: [20, 20],
+            html: rockPinHtml({ found: isFound, dragging: armed }),
+            iconSize: [44, 52],
+            iconAnchor: [22, 50],
           }),
         }).addTo(layer);
 
@@ -190,12 +192,10 @@ export default function MapView(props: Props) {
       const map = L.map(containerRef.current, {
         center: [dataRef.current.me.lat, dataRef.current.me.lng],
         zoom: 15,
+        maxZoom: 19,
         zoomControl: false,
       });
-      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "© OpenStreetMap",
-      }).addTo(map);
+      void addBasemap(L, map);
 
       mapRef.current = map;
       layerRef.current = L.layerGroup().addTo(map);
@@ -229,5 +229,5 @@ export default function MapView(props: Props) {
     };
   }, []);
 
-  return <div ref={containerRef} className="h-full w-full" />;
+  return <div ref={containerRef} className="map-fullscreen h-full w-full" />;
 }

@@ -1,6 +1,7 @@
 import { showNotification } from "@/lib/notify";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Bell, BellOff, BellRing } from "lucide-react";
 
 type Status = "unsupported" | "default" | "granted" | "denied" | "iframe";
 
@@ -47,8 +48,27 @@ export function NotificationSettings() {
   }
 
   return (
-    <section className="pebble-card mt-6 space-y-2 p-4">
-      <h2 className="text-base font-bold">🔔 Avvisi</h2>
+    <section className="pebble-card space-y-3 rounded-[1.4rem] p-4">
+      <div className="flex items-center gap-2.5">
+        <span
+          className={`grid h-9 w-9 place-items-center rounded-xl ${
+            status === "granted"
+              ? "bg-moss/15 text-[oklch(0.45_0.12_162)]"
+              : status === "denied" || status === "unsupported"
+                ? "bg-muted text-muted-foreground"
+                : "bg-secondary text-primary"
+          }`}
+        >
+          {status === "granted" ? (
+            <BellRing className="h-5 w-5" />
+          ) : status === "denied" || status === "unsupported" ? (
+            <BellOff className="h-5 w-5" />
+          ) : (
+            <Bell className="h-5 w-5" />
+          )}
+        </span>
+        <h2 className="text-lg">Avvisi</h2>
+      </div>
       {status === "granted" && (
         <>
           <p className="text-sm text-muted-foreground">
@@ -64,7 +84,7 @@ export function NotificationSettings() {
               );
               if (!ok) toast.error("Il telefono non ha mostrato l'avviso.");
             }}
-            className="w-full rounded-xl border border-border py-2.5 text-sm font-bold"
+            className="press w-full rounded-2xl bg-muted py-3 text-sm font-extrabold"
           >
             Mandami un avviso di prova
           </button>
@@ -79,7 +99,7 @@ export function NotificationSettings() {
           <button
             type="button"
             onClick={() => void enable()}
-            className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground"
+            className="press bg-brand w-full rounded-2xl py-3 text-sm font-extrabold text-white shadow-glow"
           >
             Attiva gli avvisi
           </button>
@@ -102,7 +122,7 @@ export function NotificationSettings() {
           <button
             type="button"
             onClick={() => window.open(window.location.href, "_blank", "noopener")}
-            className="w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground"
+            className="press bg-brand w-full rounded-2xl py-3 text-sm font-extrabold text-white shadow-glow"
           >
             Apri in una scheda nuova
           </button>
