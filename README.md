@@ -78,7 +78,8 @@ comando gira. In alternativa pubblica una versione di prova sulla VM OCI (sotto)
 ## Passare a un proprio progetto Supabase
 
 1. Crea un progetto su [supabase.com](https://supabase.com) (regione EU, es. Francoforte).
-2. Applica lo schema eseguendo **in quest'ordine** gli SQL nel *SQL Editor*:
+2. Applica lo schema: nel *SQL Editor* incolla tutto `supabase/setup-completo.sql` e premi *Run*
+   (è la concatenazione delle migrazioni qui sotto). In alternativa esegui **in quest'ordine** i singoli file:
    1. `supabase/migrations/2026081…` → `20260912…` (le migrazioni di Lovable, in ordine di data)
    2. `drizzle/migrations/0000…0003_*.sql`
    3. `supabase/migrations/20261015090000_regole_lato_server.sql` (regole lato server)
