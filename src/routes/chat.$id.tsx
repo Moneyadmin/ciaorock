@@ -109,7 +109,9 @@ function ChatPage() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center py-10 text-center">
             {other && <Avatar name={other.nickname} className="h-16 w-16 text-3xl shadow-lift" />}
-            <p className="mt-3 text-sm font-semibold text-muted-foreground">Nessun messaggio. Scrivi il primo!</p>
+            <p className="mt-3 text-sm font-semibold text-muted-foreground">
+              Nessun messaggio. Scrivi il primo!
+            </p>
           </div>
         )}
         {messages.map((m) => {
@@ -168,7 +170,11 @@ function ChatPage() {
           aria-label="Invia"
           className="press bg-brand grid h-[3.25rem] w-[3.25rem] shrink-0 place-items-center rounded-full text-white shadow-glow disabled:opacity-50"
         >
-          {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <SendHorizontal className="h-5 w-5" />}
+          {sending ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <SendHorizontal className="h-5 w-5" />
+          )}
         </button>
       </form>
     </AppShell>

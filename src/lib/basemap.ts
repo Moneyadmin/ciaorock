@@ -58,7 +58,10 @@ function loadStyle() {
         }
         if (layer.type === "symbol" && /shield/.test(layer.id)) {
           layer.layout = { ...layer.layout, visibility: "none" };
-        } else if (layer.type === "symbol" && JSON.stringify(layer.layout?.["text-field"] ?? "").includes("name")) {
+        } else if (
+          layer.type === "symbol" &&
+          JSON.stringify(layer.layout?.["text-field"] ?? "").includes("name")
+        ) {
           layer.layout = { ...layer.layout, "text-field": ITALIAN_NAME };
         }
       }
@@ -98,7 +101,11 @@ export async function addBasemap(L: typeof import("leaflet"), map: LeafletMap) {
       import("maplibre-gl/dist/maplibre-gl.css"),
       import("@maplibre/maplibre-gl-leaflet"),
     ]);
-    const layer = plugin.maplibreGL({ style, attribution: ATTRIBUTION, interactive: false } as never);
+    const layer = plugin.maplibreGL({
+      style,
+      attribution: ATTRIBUTION,
+      interactive: false,
+    } as never);
     return layer.addTo(map);
   } catch (err) {
     console.warn("[basemap] mappa vettoriale non disponibile, uso OpenStreetMap", err);

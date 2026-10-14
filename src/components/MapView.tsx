@@ -25,11 +25,7 @@ type Cluster = { lat: number; lng: number; rocks: RockRow[] };
  * Pixel-based clustering: rocks are grouped only when their pins would overlap
  * on screen, so zooming in always splits a counter into the single rocks.
  */
-function clusterRocks(
-  rocks: RockRow[],
-  map: import("leaflet").Map,
-  radiusPx = 46,
-): Cluster[] {
+function clusterRocks(rocks: RockRow[], map: import("leaflet").Map, radiusPx = 46): Cluster[] {
   const points = rocks.map((rock) => ({ rock, p: map.latLngToLayerPoint([rock.lat, rock.lng]) }));
   const clusters: { rocks: RockRow[]; sx: number; sy: number }[] = [];
 

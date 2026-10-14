@@ -1,7 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Check, ChevronRight, Loader2, MessageCircle, Search, UserMinus, UserPlus, Users, X } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  Loader2,
+  MessageCircle,
+  Search,
+  UserMinus,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
 import {
@@ -69,7 +79,13 @@ function FriendsPage() {
   const outgoingIds = new Set(outgoing.map((f) => f.id));
   const incomingIds = new Set(incoming.map((f) => f.id));
   const stateOf = (id: string): RelState =>
-    friendIds.has(id) ? "friend" : outgoingIds.has(id) ? "sent" : incomingIds.has(id) ? "received" : "none";
+    friendIds.has(id)
+      ? "friend"
+      : outgoingIds.has(id)
+        ? "sent"
+        : incomingIds.has(id)
+          ? "received"
+          : "none";
 
   async function accept(person: ProfileRow) {
     if (!userId) return;
@@ -138,7 +154,10 @@ function FriendsPage() {
           <SectionTitle label="Richieste ricevute" count={incoming.length} />
           <div className="mt-2 space-y-2">
             {incoming.map((person) => (
-              <div key={person.id} className="pebble-card flex items-center gap-3 rounded-[1.3rem] p-2.5 ring-2 ring-primary/25">
+              <div
+                key={person.id}
+                className="pebble-card flex items-center gap-3 rounded-[1.3rem] p-2.5 ring-2 ring-primary/25"
+              >
                 <Avatar name={person.nickname} />
                 <p className="min-w-0 flex-1 truncate font-extrabold">@{person.nickname}</p>
                 <button
@@ -169,7 +188,13 @@ function FriendsPage() {
           <SectionTitle label="Richieste inviate" count={outgoing.length} />
           <div className="mt-2 space-y-2">
             {outgoing.map((person) => (
-              <Row key={person.id} person={person} state="sent" onToggle={() => void toggleFriend(person)} onOpen={() => setOpenProfile(person)} />
+              <Row
+                key={person.id}
+                person={person}
+                state="sent"
+                onToggle={() => void toggleFriend(person)}
+                onOpen={() => setOpenProfile(person)}
+              />
             ))}
           </div>
         </>
@@ -227,19 +252,23 @@ function Row({
 }) {
   return (
     <div className="pebble-card flex items-center gap-3 rounded-[1.3rem] p-2.5">
-      <button onClick={onOpen} className="press" aria-label={`Apri il profilo di ${person.nickname}`}>
+      <button
+        onClick={onOpen}
+        className="press"
+        aria-label={`Apri il profilo di ${person.nickname}`}
+      >
         <Avatar name={person.nickname} />
       </button>
       <button onClick={onOpen} className="min-w-0 flex-1 text-left">
         <p className="truncate font-extrabold">@{person.nickname}</p>
-        <p className="text-xs text-muted-foreground">
-          Serie migliore: {person.streak_best} giorni
-        </p>
+        <p className="text-xs text-muted-foreground">Serie migliore: {person.streak_best} giorni</p>
       </button>
       <button
         onClick={onToggle}
         className={`press inline-flex shrink-0 items-center gap-1 rounded-xl px-3 py-2 text-xs font-extrabold ${
-          state === "friend" || state === "sent" ? "bg-muted text-muted-foreground" : "bg-primary text-primary-foreground"
+          state === "friend" || state === "sent"
+            ? "bg-muted text-muted-foreground"
+            : "bg-primary text-primary-foreground"
         }`}
       >
         {state === "friend" ? (
@@ -266,7 +295,10 @@ function ProfileSheet({ person, onClose }: { person: ProfileRow; onClose: () => 
   const statsQuery = useQuery({
     queryKey: ["profile-stats", person.id],
     queryFn: async () => {
-      const [finds, created] = await Promise.all([fetchFindsFor(person.id), countCreated(person.id)]);
+      const [finds, created] = await Promise.all([
+        fetchFindsFor(person.id),
+        countCreated(person.id),
+      ]);
       return { finds, created };
     },
   });
@@ -293,9 +325,16 @@ function ProfileSheet({ person, onClose }: { person: ProfileRow; onClose: () => 
       >
         <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-border" />
         <div className="flex flex-col items-center text-center">
-          <Avatar name={person.nickname} className="h-20 w-20 text-4xl shadow-lift ring-4 ring-secondary" />
-          <h2 className="mt-3 max-w-full truncate text-[1.75rem] leading-tight">@{person.nickname}</h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">{person.bio || "Nessuna descrizione."}</p>
+          <Avatar
+            name={person.nickname}
+            className="h-20 w-20 text-4xl shadow-lift ring-4 ring-secondary"
+          />
+          <h2 className="mt-3 max-w-full truncate text-[1.75rem] leading-tight">
+            @{person.nickname}
+          </h2>
+          <p className="mt-0.5 text-sm text-muted-foreground">
+            {person.bio || "Nessuna descrizione."}
+          </p>
         </div>
         <Link
           to="/chat/$id"
@@ -312,7 +351,9 @@ function ProfileSheet({ person, onClose }: { person: ProfileRow; onClose: () => 
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl bg-muted p-3">
               <p className="font-display text-2xl">{value}</p>
-              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+              <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                {label}
+              </p>
             </div>
           ))}
         </div>

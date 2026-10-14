@@ -51,7 +51,10 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "login") {
-        const { error: err } = await supabase.auth.signInWithPassword({ email: mail, password: pass });
+        const { error: err } = await supabase.auth.signInWithPassword({
+          email: mail,
+          password: pass,
+        });
         if (err) {
           setError(
             err.message.toLowerCase().includes("invalid")
@@ -129,8 +132,17 @@ function AuthPage() {
               Sarà unico e visibile agli altri cercatori.
             </p>
           </div>
-          <Field label="Nickname" value={nickname} onChange={setNickname} placeholder="es. SassoVolante" />
-          {error && <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">{error}</p>}
+          <Field
+            label="Nickname"
+            value={nickname}
+            onChange={setNickname}
+            placeholder="es. SassoVolante"
+          />
+          {error && (
+            <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
+              {error}
+            </p>
+          )}
           <PrimaryButton disabled={busy}>Entra in RockDex</PrimaryButton>
         </form>
       ) : (
@@ -151,7 +163,13 @@ function AuthPage() {
               Registrati
             </button>
           </div>
-          <Field label="Email" value={email} onChange={setEmail} type="email" placeholder="tu@email.it" />
+          <Field
+            label="Email"
+            value={email}
+            onChange={setEmail}
+            type="email"
+            placeholder="tu@email.it"
+          />
           <Field
             label="Password"
             value={password}
@@ -159,8 +177,14 @@ function AuthPage() {
             type="password"
             placeholder="••••••"
           />
-          {error && <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">{error}</p>}
-          <PrimaryButton disabled={busy}>{mode === "login" ? "Accedi" : "Crea account"}</PrimaryButton>
+          {error && (
+            <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
+              {error}
+            </p>
+          )}
+          <PrimaryButton disabled={busy}>
+            {mode === "login" ? "Accedi" : "Crea account"}
+          </PrimaryButton>
         </form>
       )}
     </div>

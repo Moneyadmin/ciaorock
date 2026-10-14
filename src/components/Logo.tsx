@@ -17,7 +17,13 @@ export function Logo({ className = "h-20 w-20" }: { className?: string }) {
       <circle cx="58" cy="44" r="4.5" fill="#2b2545" />
       <circle cx="31" cy="54" r="4" fill="#ff4fa3" opacity="0.55" />
       <circle cx="65" cy="54" r="4" fill="#ff4fa3" opacity="0.55" />
-      <path d="M40 56c4.6 4 11.4 4 16 0" fill="none" stroke="#2b2545" strokeWidth="4" strokeLinecap="round" />
+      <path
+        d="M40 56c4.6 4 11.4 4 16 0"
+        fill="none"
+        stroke="#2b2545"
+        strokeWidth="4"
+        strokeLinecap="round"
+      />
       <circle cx="70" cy="30" r="6" fill="#d4ff3a" />
     </svg>
   );

@@ -82,7 +82,11 @@ export async function fetchRocks(): Promise<RockRow[]> {
 }
 
 export async function fetchRockPhoto(rockId: string): Promise<string | null> {
-  const { data, error } = await supabase.from("rocks").select("photo").eq("id", rockId).maybeSingle();
+  const { data, error } = await supabase
+    .from("rocks")
+    .select("photo")
+    .eq("id", rockId)
+    .maybeSingle();
   if (error) throw new Error(error.message);
   return data?.photo ?? null;
 }
@@ -174,7 +178,12 @@ export async function registerFind(input: {
   photo: string;
   lat: number | null;
   lng: number | null;
-  place: { city: string | null; region: string | null; country: string | null; continent: string | null };
+  place: {
+    city: string | null;
+    region: string | null;
+    country: string | null;
+    continent: string | null;
+  };
 }) {
   const { error } = await supabase.from("finds").insert({
     rock_id: input.rockId,
@@ -236,7 +245,10 @@ export async function fetchFriendState(userId: string): Promise<FriendState> {
   const outgoing = new Set(
     links.filter((l) => l.status === "pending" && l.user_id === userId).map(other),
   );
-  for (const id of accepted) { incoming.delete(id); outgoing.delete(id); }
+  for (const id of accepted) {
+    incoming.delete(id);
+    outgoing.delete(id);
+  }
   const profs = await profilesByIds([...new Set([...accepted, ...incoming, ...outgoing])]);
   return {
     friends: profs.filter((p) => accepted.has(p.id)),
@@ -417,9 +429,16 @@ export async function fetchLeaderboard(): Promise<LeaderRow[]> {
 
   const foundBy = new Map<string, number>();
   const foundPoints = new Map<string, number>();
-  for (const row of (finds.data ?? []) as Array<{ user_id: string; found_at: string; points_awarded: number | null }>) {
+  for (const row of (finds.data ?? []) as Array<{
+    user_id: string;
+    found_at: string;
+    points_awarded: number | null;
+  }>) {
     foundBy.set(row.user_id, (foundBy.get(row.user_id) ?? 0) + 1);
-    foundPoints.set(row.user_id, (foundPoints.get(row.user_id) ?? 0) + (row.points_awarded ?? 10) * factor(row.found_at));
+    foundPoints.set(
+      row.user_id,
+      (foundPoints.get(row.user_id) ?? 0) + (row.points_awarded ?? 10) * factor(row.found_at),
+    );
   }
   const createdBy = new Map<string, number>();
   const createdPoints = new Map<string, number>();
@@ -462,7 +481,13 @@ export async function rateRock(rockId: string, userId: string, stars: number) {
   if (error) throw new Error(error.message);
 }
 
-export type FriendLocation = { id: string; nickname: string; lat: number; lng: number; updated_at: string | null };
+export type FriendLocation = {
+  id: string;
+  nickname: string;
+  lat: number;
+  lng: number;
+  updated_at: string | null;
+};
 
 /** Salva la mia posizione attuale sul mio profilo. */
 export async function saveMyLocation(userId: string, lat: number, lng: number) {

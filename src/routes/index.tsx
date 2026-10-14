@@ -76,7 +76,6 @@ function notify(title: string, body: string) {
   void showNotification(title, body);
 }
 
-
 function MapPage() {
   const { loading, userId, profile, admin } = useSession();
   const adminMoveRockFn = useServerFn(adminMoveRock);
@@ -123,7 +122,10 @@ function MapPage() {
   // Posizione degli amici, aggiornata ogni 12 secondi.
   useEffect(() => {
     if (!userId) return;
-    const load = () => fetchFriendLocations(userId).then(setFriends).catch(() => undefined);
+    const load = () =>
+      fetchFriendLocations(userId)
+        .then(setFriends)
+        .catch(() => undefined);
     load();
     const t = setInterval(load, 12000);
     return () => clearInterval(t);
@@ -164,7 +166,6 @@ function MapPage() {
       );
     }
   }, [rocks, foundIds, position]);
-
 
   useEffect(() => {
     if (!loading && (!userId || !profile?.nickname)) navigate({ to: "/auth" });
@@ -238,13 +239,14 @@ function MapPage() {
     importLegacyRocks()
       .then((n) => {
         if (n > 0) {
-          setToast(`${n} sass${n === 1 ? "o" : "i"} delle versioni precedenti importat${n === 1 ? "o" : "i"} 🪨`);
+          setToast(
+            `${n} sass${n === 1 ? "o" : "i"} delle versioni precedenti importat${n === 1 ? "o" : "i"} 🪨`,
+          );
           void reload();
         }
       })
       .catch(() => undefined);
   }, [userId, reload]);
-
 
   useEffect(() => {
     getPrecisePosition()
@@ -288,7 +290,9 @@ function MapPage() {
                 }
                 onAdminHoldCancel={() => setToast(null)}
                 onAdminArmed={(rock) =>
-                  setToast(`"${rock.name}" sbloccato: ora tocca il punto della mappa dove spostarlo 👆`)
+                  setToast(
+                    `"${rock.name}" sbloccato: ora tocca il punto della mappa dove spostarlo 👆`,
+                  )
                 }
               />
             </Suspense>
@@ -491,7 +495,13 @@ function RockSheet({
         country: null,
         continent: null,
       }));
-      await registerFind({ rockId: rock.id, photo: proof, lat: me.lat, lng: me.lng, place: resolved });
+      await registerFind({
+        rockId: rock.id,
+        photo: proof,
+        lat: me.lat,
+        lng: me.lng,
+        place: resolved,
+      });
       setRating(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registrazione non riuscita.");
@@ -549,7 +559,9 @@ function RockSheet({
             <Trophy className="h-8 w-8" strokeWidth={2.4} />
           </span>
           <h2 className="text-2xl leading-tight">Quanto era difficile trovarlo?</h2>
-          <p className="text-sm text-muted-foreground">0 stelle = banale · 5 stelle = difficilissimo</p>
+          <p className="text-sm text-muted-foreground">
+            0 stelle = banale · 5 stelle = difficilissimo
+          </p>
           <div className="flex items-center justify-center gap-1.5">
             {[0, 1, 2, 3, 4, 5].map((n) => {
               const on = stars != null && n <= stars && n > 0;
@@ -606,8 +618,14 @@ function RockSheet({
           >
             {busy ? "Invio…" : "Invia valutazione"}
           </button>
-          <p className="text-xs text-muted-foreground">Dopo almeno 3 voti, i punti del sasso salgono o scendono in base a stelle e commenti.</p>
-          <button type="button" onClick={() => finish("")} className="press text-sm font-bold text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
+            Dopo almeno 3 voti, i punti del sasso salgono o scendono in base a stelle e commenti.
+          </p>
+          <button
+            type="button"
+            onClick={() => finish("")}
+            className="press text-sm font-bold text-muted-foreground"
+          >
             Salta
           </button>
         </div>
@@ -675,9 +693,18 @@ function RockSheet({
         </div>
 
         <div className="mt-3 grid grid-cols-2 gap-2 text-[13px] font-bold">
-          <StatChip icon={<Navigation className="h-4 w-4" />} label={formatDistance(distanceMeters(me, rock))} />
-          <StatChip icon={<Trophy className="h-4 w-4" />} label={`Trovato ${rock.found_count} volte`} />
-          <StatChip icon={<Repeat2 className="h-4 w-4" />} label={`Spostato ${rock.move_count} volte`} />
+          <StatChip
+            icon={<Navigation className="h-4 w-4" />}
+            label={formatDistance(distanceMeters(me, rock))}
+          />
+          <StatChip
+            icon={<Trophy className="h-4 w-4" />}
+            label={`Trovato ${rock.found_count} volte`}
+          />
+          <StatChip
+            icon={<Repeat2 className="h-4 w-4" />}
+            label={`Spostato ${rock.move_count} volte`}
+          />
           {rock.rating_count > 0 && rock.rating_avg != null && (
             <StatChip
               icon={<Star className="h-4 w-4 text-sun" fill="currentColor" />}
@@ -726,15 +753,14 @@ function RockSheet({
               >
                 {checking ? (
                   <>
-                    <ScanSearch className="mt-0.5 h-4 w-4 shrink-0 animate-pulse" /> Verifica AI della foto in corso…
+                    <ScanSearch className="mt-0.5 h-4 w-4 shrink-0 animate-pulse" /> Verifica AI
+                    della foto in corso…
                   </>
                 ) : (
                   verdict
                 )}
               </div>
             )}
-
-
 
             {mode === "move" && (
               <>
@@ -782,7 +808,11 @@ function RockSheet({
                 onClick={() => void (mode === "find" ? confirmFind() : confirmMove())}
                 className="press bg-brand flex-[1.4] rounded-2xl py-3.5 text-sm font-extrabold text-white shadow-glow disabled:opacity-60"
               >
-                {busy ? "Invio…" : mode === "find" ? "Conferma ritrovamento" : "Conferma spostamento"}
+                {busy
+                  ? "Invio…"
+                  : mode === "find"
+                    ? "Conferma ritrovamento"
+                    : "Conferma spostamento"}
               </button>
             </div>
           </div>

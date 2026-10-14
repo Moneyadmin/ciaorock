@@ -64,7 +64,8 @@ export default function LocationPicker({ value, onChange }: Props) {
     const map = mapRef.current;
     if (!marker || !map) return;
     const current = marker.getLatLng();
-    if (Math.abs(current.lat - value.lat) < 1e-7 && Math.abs(current.lng - value.lng) < 1e-7) return;
+    if (Math.abs(current.lat - value.lat) < 1e-7 && Math.abs(current.lng - value.lng) < 1e-7)
+      return;
     marker.setLatLng([value.lat, value.lng]);
     map.setView([value.lat, value.lng], map.getZoom());
   }, [value.lat, value.lng]);
@@ -76,5 +77,10 @@ export default function LocationPicker({ value, onChange }: Props) {
     };
   }, []);
 
-  return <div ref={containerRef} className="h-56 w-full overflow-hidden rounded-2xl ring-1 ring-border" />;
+  return (
+    <div
+      ref={containerRef}
+      className="h-56 w-full overflow-hidden rounded-2xl ring-1 ring-border"
+    />
+  );
 }

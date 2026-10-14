@@ -57,7 +57,9 @@ function LeaderboardPage() {
             aria-selected={sort === option.key}
             onClick={() => setSort(option.key)}
             className={`press flex-1 rounded-xl py-2.5 text-xs font-extrabold ${
-              sort === option.key ? "bg-ink text-ink-foreground shadow-pebble" : "text-muted-foreground"
+              sort === option.key
+                ? "bg-ink text-ink-foreground shadow-pebble"
+                : "text-muted-foreground"
             }`}
           >
             {option.label}
@@ -94,7 +96,9 @@ function LeaderboardPage() {
                   {first && <Crown className="mb-1 h-6 w-6 text-sun" fill="currentColor" />}
                   <span
                     className={`grid place-items-center rounded-full border-[3px] font-display text-white shadow-lift ${
-                      first ? "h-[4.5rem] w-[4.5rem] border-sun text-3xl" : "h-14 w-14 border-white/80 text-2xl"
+                      first
+                        ? "h-[4.5rem] w-[4.5rem] border-sun text-3xl"
+                        : "h-14 w-14 border-white/80 text-2xl"
                     }`}
                     style={{ background: avatarGradient(row.nickname) }}
                   >
@@ -104,7 +108,9 @@ function LeaderboardPage() {
                     @{row.nickname}
                     {row.id === userId && " (tu)"}
                   </p>
-                  <p className="font-display text-lg leading-tight">{value(row, sort).toLocaleString("it-IT")}</p>
+                  <p className="font-display text-lg leading-tight">
+                    {value(row, sort).toLocaleString("it-IT")}
+                  </p>
                   <div
                     className={`mt-2 grid w-full place-items-center rounded-t-2xl bg-white/20 font-display text-2xl backdrop-blur ${
                       first ? "h-20" : i === 1 ? "h-14" : "h-10"
@@ -145,14 +151,18 @@ function LeaderboardPage() {
                 <p className="truncate font-extrabold">
                   @{row.nickname}
                   {me && (
-                    <span className="ml-2 rounded-full bg-lime px-2 py-0.5 text-[10px] font-extrabold text-ink">TU</span>
+                    <span className="ml-2 rounded-full bg-lime px-2 py-0.5 text-[10px] font-extrabold text-ink">
+                      TU
+                    </span>
                   )}
                 </p>
                 <p className={`text-xs ${me ? "text-white/60" : "text-muted-foreground"}`}>
                   {row.found} trovati · {row.created} creati · serie {row.streak_best}
                 </p>
               </div>
-              <span className="shrink-0 font-display text-xl">{value(row, sort).toLocaleString("it-IT")}</span>
+              <span className="shrink-0 font-display text-xl">
+                {value(row, sort).toLocaleString("it-IT")}
+              </span>
             </article>
           );
         })}

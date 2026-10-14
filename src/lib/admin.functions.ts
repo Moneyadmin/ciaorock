@@ -211,7 +211,10 @@ export const adminSetDoubleDay = createServerFn({ method: "POST" })
     await assertAdmin(context as Ctx);
     const { error } = await context.supabase
       .from("double_days")
-      .upsert({ day: data.day, multiplier: Math.max(2, Math.round(data.multiplier)) }, { onConflict: "day" });
+      .upsert(
+        { day: data.day, multiplier: Math.max(2, Math.round(data.multiplier)) },
+        { onConflict: "day" },
+      );
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
@@ -232,7 +235,9 @@ export const adminListRockPoints = createServerFn({ method: "POST" })
     await assertAdmin(context as Ctx);
     const { data, error } = await context.supabase
       .from("rocks")
-      .select("id,name,difficulty,points,points_override,rating_avg,rating_count,creator:profiles!rocks_creator_id_fkey(nickname)")
+      .select(
+        "id,name,difficulty,points,points_override,rating_avg,rating_count,creator:profiles!rocks_creator_id_fkey(nickname)",
+      )
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -251,7 +256,10 @@ export const adminListRockPoints = createServerFn({ method: "POST" })
 export const adminSetRockPoints = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { rockId: string; points: number | null }) => {
-    if (data.points !== null && (!Number.isInteger(data.points) || data.points < 0 || data.points > 100000))
+    if (
+      data.points !== null &&
+      (!Number.isInteger(data.points) || data.points < 0 || data.points > 100000)
+    )
       throw new Error("Punti non validi");
     return data;
   })

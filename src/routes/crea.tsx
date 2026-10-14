@@ -1,7 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { Bot, Camera, CheckCircle2, Crosshair, FileText, Loader2, MapPin, PartyPopper, ScanSearch, WifiOff } from "lucide-react";
+import {
+  Bot,
+  Camera,
+  CheckCircle2,
+  Crosshair,
+  FileText,
+  Loader2,
+  MapPin,
+  PartyPopper,
+  ScanSearch,
+  WifiOff,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { createRock } from "@/lib/api";
 import { clearDraft, enqueue, readDraft, saveDraft } from "@/lib/offline";
@@ -66,7 +77,9 @@ function CreatePage() {
     if (draft) {
       setName(draft.name);
       setClue(draft.clue);
-      setDifficulty((LEVELS as readonly string[]).includes(draft.difficulty) ? draft.difficulty : "Difficile");
+      setDifficulty(
+        (LEVELS as readonly string[]).includes(draft.difficulty) ? draft.difficulty : "Difficile",
+      );
       setPhoto(draft.photo);
       if (draft.lat != null && draft.lng != null) {
         setPosition({ lat: draft.lat, lng: draft.lng });
@@ -159,7 +172,9 @@ function CreatePage() {
     setError(null);
     if (name.trim().length < 3) return setError("Dai un nome al tuo sasso (min. 3 caratteri).");
     if (!photo)
-      return setError("La foto è obbligatoria: serve un'immagine chiara della faccia dipinta del sasso.");
+      return setError(
+        "La foto è obbligatoria: serve un'immagine chiara della faccia dipinta del sasso.",
+      );
     if (checking) return setError("Attendi la verifica AI della foto.");
     if (clue.trim().length < 10) return setError("Scrivi un indizio di almeno 10 caratteri.");
     if (!hasFix)
@@ -216,7 +231,11 @@ function CreatePage() {
       {done && (
         <div className="bg-brand mb-4 flex items-start gap-3 rounded-[1.4rem] p-4 text-sm font-bold text-white shadow-glow animate-in fade-in slide-in-from-top-2">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/20">
-            {done.startsWith("Sasso salvato offline") ? <WifiOff className="h-5 w-5" /> : <PartyPopper className="h-5 w-5" />}
+            {done.startsWith("Sasso salvato offline") ? (
+              <WifiOff className="h-5 w-5" />
+            ) : (
+              <PartyPopper className="h-5 w-5" />
+            )}
           </span>
           <span className="pt-0.5">{done}</span>
         </div>
@@ -254,7 +273,11 @@ function CreatePage() {
           >
             {photo ? (
               <>
-                <img src={photo} alt="Anteprima del sasso dipinto" className="h-full w-full object-cover" />
+                <img
+                  src={photo}
+                  alt="Anteprima del sasso dipinto"
+                  className="h-full w-full object-cover"
+                />
                 <span className="glass absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-extrabold">
                   <Camera className="h-3.5 w-3.5" /> Cambia foto
                 </span>
@@ -288,7 +311,8 @@ function CreatePage() {
             >
               {checking ? (
                 <>
-                  <ScanSearch className="mt-0.5 h-4 w-4 shrink-0 animate-pulse" /> Verifica AI della faccia dipinta in corso…
+                  <ScanSearch className="mt-0.5 h-4 w-4 shrink-0 animate-pulse" /> Verifica AI della
+                  faccia dipinta in corso…
                 </>
               ) : (
                 <>
@@ -300,7 +324,13 @@ function CreatePage() {
           )}
         </div>
 
-        <TextField n={2} label="Nome del sasso" value={name} onChange={setName} placeholder="es. Volpe Rossa" />
+        <TextField
+          n={2}
+          label="Nome del sasso"
+          value={name}
+          onChange={setName}
+          placeholder="es. Volpe Rossa"
+        />
 
         <label className="block">
           <StepLabel n={3} label="Indizio per trovarlo" />
@@ -338,7 +368,8 @@ function CreatePage() {
           </div>
           <p className="mt-2.5 flex gap-2 rounded-2xl bg-secondary/70 p-3 text-xs font-medium text-secondary-foreground">
             <Bot className="h-4 w-4 shrink-0" />
-            Non scegli tu i punti: un'AI legge l'indizio e la difficoltà e assegna da 50 a 2.000 punti. Poi i voti e i commenti dei giocatori li fanno salire o scendere.
+            Non scegli tu i punti: un'AI legge l'indizio e la difficoltà e assegna da 50 a 2.000
+            punti. Poi i voti e i commenti dei giocatori li fanno salire o scendere.
           </p>
         </div>
 
@@ -354,27 +385,29 @@ function CreatePage() {
             </button>
           </div>
           <div className="pebble-card space-y-2.5 rounded-[1.6rem] p-2 text-sm">
-          <p className="flex items-start gap-2 px-2 pt-1 font-medium text-muted-foreground">
-            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
-            {gpsLabel}
-          </p>
-          <Suspense
-            fallback={
-              <div className="grid h-56 place-items-center rounded-2xl bg-muted text-sm font-semibold text-muted-foreground">
-                <Loader2 className="h-5 w-5 animate-spin" />
-              </div>
-            }
-          >
-            <LocationPicker value={position} onChange={pickPosition} />
-          </Suspense>
-          <p className="px-2 pb-1 font-mono text-[11px] text-muted-foreground">
-            {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
-          </p>
+            <p className="flex items-start gap-2 px-2 pt-1 font-medium text-muted-foreground">
+              <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+              {gpsLabel}
+            </p>
+            <Suspense
+              fallback={
+                <div className="grid h-56 place-items-center rounded-2xl bg-muted text-sm font-semibold text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                </div>
+              }
+            >
+              <LocationPicker value={position} onChange={pickPosition} />
+            </Suspense>
+            <p className="px-2 pb-1 font-mono text-[11px] text-muted-foreground">
+              {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
+            </p>
           </div>
         </div>
 
         {error && (
-          <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>
+          <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">
+            {error}
+          </p>
         )}
 
         <button
@@ -393,7 +426,9 @@ function CreatePage() {
 function StepLabel({ n, label }: { n: number; label: string }) {
   return (
     <span className="mb-2 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
-      <span className="grid h-5 w-5 place-items-center rounded-full bg-ink text-[10px] text-lime">{n}</span>
+      <span className="grid h-5 w-5 place-items-center rounded-full bg-ink text-[10px] text-lime">
+        {n}
+      </span>
       {label}
     </span>
   );

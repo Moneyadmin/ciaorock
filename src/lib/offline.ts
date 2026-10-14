@@ -59,7 +59,10 @@ function writeQueue(items: PendingAction[]) {
 }
 
 export function enqueue(action: Omit<PendingAction, "id"> & { id?: string }) {
-  const item = { ...action, id: action.id ?? `q-${Date.now()}-${Math.random().toString(36).slice(2)}` } as PendingAction;
+  const item = {
+    ...action,
+    id: action.id ?? `q-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+  } as PendingAction;
   writeQueue([...readQueue(), item]);
   return item;
 }

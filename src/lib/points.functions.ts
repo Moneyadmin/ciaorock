@@ -54,7 +54,10 @@ Rispondi con "points" e "reason" (una frase breve in italiano).`,
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("rocks").update({ ai_points: points, ai_reason: reason }).eq("id", rock.id);
+    await supabaseAdmin
+      .from("rocks")
+      .update({ ai_points: points, ai_reason: reason })
+      .eq("id", rock.id);
     return { points, reason };
   });
 

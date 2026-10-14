@@ -62,13 +62,12 @@ export function InstallPrompt() {
     <div className="fixed inset-0 z-[1000] flex items-end bg-ink/50 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm animate-in fade-in">
       <div className="pebble-card mx-auto w-full max-w-md space-y-3 rounded-[2rem] p-5 animate-in slide-in-from-bottom-8 duration-300">
         <Logo className="h-14 w-14 -rotate-6" />
-        <h2 className="text-2xl leading-tight">
-          Vuoi aggiungere Ciao Rock alla schermata home?
-        </h2>
+        <h2 className="text-2xl leading-tight">Vuoi aggiungere Ciao Rock alla schermata home?</h2>
         {iosHelp ? (
           <p className="text-sm text-muted-foreground">
-            Sul tuo telefono si fa così: tocca il pulsante <strong>Condividi</strong> del browser, poi{" "}
-            <strong>Aggiungi alla schermata Home</strong>. Ciao Rock si aprirà come una vera app.
+            Sul tuo telefono si fa così: tocca il pulsante <strong>Condividi</strong> del browser,
+            poi <strong>Aggiungi alla schermata Home</strong>. Ciao Rock si aprirà come una vera
+            app.
           </p>
         ) : (
           <p className="text-sm text-muted-foreground">

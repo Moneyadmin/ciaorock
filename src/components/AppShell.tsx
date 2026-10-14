@@ -30,8 +30,8 @@ export function AppShell({
             </span>
             <h1 className="mt-5 text-3xl">Sei stato escluso dal gioco</h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Un amministratore ha bloccato questo account. Se pensi sia un errore, contatta lo staff
-              di RockDex.
+              Un amministratore ha bloccato questo account. Se pensi sia un errore, contatta lo
+              staff di RockDex.
             </p>
           </div>
         </div>
@@ -47,7 +47,9 @@ export function AppShell({
             <div className="min-w-0">
               <h1 className="truncate text-[2rem] leading-none text-foreground">{title}</h1>
               {subtitle && (
-                <p className="mt-1.5 truncate text-sm font-medium text-muted-foreground">{subtitle}</p>
+                <p className="mt-1.5 truncate text-sm font-medium text-muted-foreground">
+                  {subtitle}
+                </p>
               )}
             </div>
             {action}

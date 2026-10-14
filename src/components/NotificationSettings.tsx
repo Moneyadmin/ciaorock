@@ -72,8 +72,8 @@ export function NotificationSettings() {
       {status === "granted" && (
         <>
           <p className="text-sm text-muted-foreground">
-            Gli avvisi sono <strong>attivi</strong>: ti scrivo per le giornate a punti doppi, i sassi
-            vicini e i messaggi dallo staff.
+            Gli avvisi sono <strong>attivi</strong>: ti scrivo per le giornate a punti doppi, i
+            sassi vicini e i messaggi dallo staff.
           </p>
           <button
             type="button"
@@ -94,7 +94,8 @@ export function NotificationSettings() {
       {status === "default" && (
         <>
           <p className="text-sm text-muted-foreground">
-            Attiva gli avvisi per sapere quando c'è una giornata a punti doppi o un sasso vicino a te.
+            Attiva gli avvisi per sapere quando c'è una giornata a punti doppi o un sasso vicino a
+            te.
           </p>
           <button
             type="button"
@@ -108,8 +109,8 @@ export function NotificationSettings() {
 
       {status === "denied" && (
         <p className="text-sm text-muted-foreground">
-          Gli avvisi sono <strong>bloccati</strong>. Apri le impostazioni del sito nel browser (l'icona
-          accanto all'indirizzo) e imposta le notifiche su "Consenti", poi torna qui.
+          Gli avvisi sono <strong>bloccati</strong>. Apri le impostazioni del sito nel browser
+          (l'icona accanto all'indirizzo) e imposta le notifiche su "Consenti", poi torna qui.
         </p>
       )}
 
@@ -131,8 +132,8 @@ export function NotificationSettings() {
 
       {status === "unsupported" && (
         <p className="text-sm text-muted-foreground">
-          Questo browser non supporta gli avvisi. Su iPhone aggiungi Ciao Rock alla schermata home per
-          riceverli.
+          Questo browser non supporta gli avvisi. Su iPhone aggiungi Ciao Rock alla schermata home
+          per riceverli.
         </p>
       )}
     </section>

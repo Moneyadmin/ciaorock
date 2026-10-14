@@ -39,7 +39,12 @@ export function LiveAlerts() {
       )
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${userId}` },
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "messages",
+          filter: `recipient_id=eq.${userId}`,
+        },
         async (p) => {
           const msg = p.new as { sender_id: string; body: string };
           if (window.location.pathname === `/chat/${msg.sender_id}`) return;

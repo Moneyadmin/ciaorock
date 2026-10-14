@@ -13,7 +13,10 @@ export const Route = createFileRoute("/messaggi")({
       { title: "Messaggi — RockDex" },
       { name: "description", content: "Le tue conversazioni private con gli altri cercatori." },
       { property: "og:title", content: "Messaggi — RockDex" },
-      { property: "og:description", content: "Tutte le tue chat con gli altri cercatori di sassi." },
+      {
+        property: "og:description",
+        content: "Tutte le tue chat con gli altri cercatori di sassi.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -40,7 +43,11 @@ function InboxPage() {
     void reload();
     const channel = supabase
       .channel(`inbox-${userId}-${Date.now()}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => void reload())
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        () => void reload(),
+      )
       .subscribe();
     const poll = window.setInterval(reload, 6000);
     return () => {
@@ -83,21 +90,21 @@ function InboxPage() {
           >
             <Avatar name={other.nickname} className="h-12 w-12 text-xl" />
             <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <span className="truncate font-extrabold">@{other.nickname}</span>
-              <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
-                {new Date(last.created_at).toLocaleString("it-IT", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
-            <p className="truncate text-sm text-muted-foreground">
-              {last.sender_id === userId ? "Tu: " : ""}
-              {last.body}
-            </p>
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate font-extrabold">@{other.nickname}</span>
+                <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
+                  {new Date(last.created_at).toLocaleString("it-IT", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+              <p className="truncate text-sm text-muted-foreground">
+                {last.sender_id === userId ? "Tu: " : ""}
+                {last.body}
+              </p>
             </div>
           </Link>
         ))}

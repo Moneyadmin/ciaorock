@@ -28,7 +28,10 @@ export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Pannello admin — RockDex" },
-      { name: "description", content: "Pannello di controllo riservato: sassi, giocatori e giorni speciali." },
+      {
+        name: "description",
+        content: "Pannello di controllo riservato: sassi, giocatori e giorni speciali.",
+      },
       { property: "og:title", content: "Pannello admin — RockDex" },
       { property: "og:description", content: "Area riservata di RockDex." },
       { property: "og:type", content: "website" },
@@ -189,10 +192,14 @@ function AdminTools() {
   const [rocks, setRocks] = useState<Rock[]>([]);
   const [days, setDays] = useState<Special[]>([]);
   const [trash, setTrash] = useState<Trashed[]>([]);
-  const [anns, setAnns] = useState<Array<{ id: string; title: string; body: string; created_at: string }>>([]);
+  const [anns, setAnns] = useState<
+    Array<{ id: string; title: string; body: string; created_at: string }>
+  >([]);
   const [annTitle, setAnnTitle] = useState("");
   const [annBody, setAnnBody] = useState("");
-  const [tab, setTab] = useState<"sassi" | "punti" | "giocatori" | "giorni" | "avvisi" | "cestino">("sassi");
+  const [tab, setTab] = useState<"sassi" | "punti" | "giocatori" | "giorni" | "avvisi" | "cestino">(
+    "sassi",
+  );
   const [newDay, setNewDay] = useState("");
   const [newMult, setNewMult] = useState(2);
 
@@ -319,7 +326,9 @@ function AdminTools() {
                 </p>
               </div>
               <button
-                onClick={() => run(() => restoreRock({ data: { rockId: item.id } }), "Sasso ripristinato")}
+                onClick={() =>
+                  run(() => restoreRock({ data: { rockId: item.id } }), "Sasso ripristinato")
+                }
                 className="rounded-xl bg-primary px-3 py-2 text-sm font-bold text-primary-foreground"
               >
                 Ripristina
@@ -327,7 +336,6 @@ function AdminTools() {
             </div>
           ))
         ))}
-
 
       {tab === "sassi" &&
         rocks.map((rock) => (
@@ -337,9 +345,7 @@ function AdminTools() {
             onMove={(lat, lng) =>
               run(() => moveRock({ data: { rockId: rock.id, lat, lng } }), "Sasso spostato")
             }
-            onDelete={() =>
-              run(() => deleteRock({ data: { rockId: rock.id } }), "Sasso eliminato")
-            }
+            onDelete={() => run(() => deleteRock({ data: { rockId: rock.id } }), "Sasso eliminato")}
           />
         ))}
 
@@ -506,9 +512,7 @@ function PlayerRowCard({
       <button
         onClick={onBan}
         className={`w-full rounded-xl py-2.5 text-sm font-bold ${
-          player.banned
-            ? "border border-border"
-            : "bg-destructive text-destructive-foreground"
+          player.banned ? "border border-border" : "bg-destructive text-destructive-foreground"
         }`}
       >
         {player.banned ? "Sblocca giocatore" : "Banna giocatore"}
@@ -566,7 +570,11 @@ function RockPointsTable() {
               <td className="p-2">
                 {r.points}
                 <span className="block text-[10px] text-muted-foreground">
-                  {r.points_override != null ? "manuale" : r.rating_count >= 2 ? "community" : `IA · ${r.difficulty}`}
+                  {r.points_override != null
+                    ? "manuale"
+                    : r.rating_count >= 2
+                      ? "community"
+                      : `IA · ${r.difficulty}`}
                 </span>
               </td>
               <td className="p-2">

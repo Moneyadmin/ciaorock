@@ -69,7 +69,9 @@ const STREAK_TIERS: Array<[string, string, number, string]> = [
   ["mensile", "MENSILE", 30, "🗓️"],
 ];
 
-const PLACE_TIERS: Array<[string, string, "city" | "region" | "country" | "continent", number, string]> = [
+const PLACE_TIERS: Array<
+  [string, string, "city" | "region" | "country" | "continent", number, string]
+> = [
   ["cittadino-1", "CITTADINO 1", "city", 5, "🏘️"],
   ["cittadino-2", "CITTADINO 2", "city", 10, "🏙️"],
   ["cittadino-3", "CITTADINO 3", "city", 25, "🌆"],
@@ -189,12 +191,14 @@ export function earnedBadgeIds(stats: BadgeStats): string[] {
 
   const times = stats.finds.map((f) => new Date(f.found_at));
   for (let hour = 0; hour <= 12; hour += 1) {
-    if (times.some((d) => d.getHours() === hour && d.getMinutes() === 0)) earned.push(`ora-${hour}`);
+    if (times.some((d) => d.getHours() === hour && d.getMinutes() === 0))
+      earned.push(`ora-${hour}`);
   }
   if (times.some((d) => d.getHours() < 12)) earned.push("mattinata");
   if (times.some((d) => d.getHours() >= 12)) earned.push("serata");
   for (const [, h, m] of MINUTE_BADGES) {
-    if (times.some((d) => d.getHours() === h && d.getMinutes() === m)) earned.push(`minuto-${h}-${m}`);
+    if (times.some((d) => d.getHours() === h && d.getMinutes() === m))
+      earned.push(`minuto-${h}-${m}`);
   }
 
   const maxima = {

@@ -1,7 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import { Award, Flame, Gem, GraduationCap, Loader2, Lock, LogOut, MapPin, Shield, Sparkles } from "lucide-react";
+import {
+  Award,
+  Flame,
+  Gem,
+  GraduationCap,
+  Loader2,
+  Lock,
+  LogOut,
+  MapPin,
+  Shield,
+  Sparkles,
+} from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { Tutorial } from "@/components/Tutorial";
@@ -84,10 +95,30 @@ function CollectionPage() {
   return (
     <AppShell title="Il mio RockDex" subtitle={profile ? `@${profile.nickname}` : undefined}>
       <div className="grid grid-cols-4 gap-2">
-        <Stat label="Trovati" value={finds.length} icon={<Gem className="h-4 w-4" />} tone="bg-primary text-primary-foreground" />
-        <Stat label="Creati" value={created} icon={<Sparkles className="h-4 w-4" />} tone="bg-paint text-paint-foreground" />
-        <Stat label="Badge" value={earned.length} icon={<Award className="h-4 w-4" />} tone="bg-sun text-ink" />
-        <Stat label="Serie" value={profile?.streak_current ?? 0} icon={<Flame className="h-4 w-4" />} tone="bg-lime text-ink" />
+        <Stat
+          label="Trovati"
+          value={finds.length}
+          icon={<Gem className="h-4 w-4" />}
+          tone="bg-primary text-primary-foreground"
+        />
+        <Stat
+          label="Creati"
+          value={created}
+          icon={<Sparkles className="h-4 w-4" />}
+          tone="bg-paint text-paint-foreground"
+        />
+        <Stat
+          label="Badge"
+          value={earned.length}
+          icon={<Award className="h-4 w-4" />}
+          tone="bg-sun text-ink"
+        />
+        <Stat
+          label="Serie"
+          value={profile?.streak_current ?? 0}
+          icon={<Flame className="h-4 w-4" />}
+          tone="bg-lime text-ink"
+        />
       </div>
 
       <div className="mt-4">
@@ -105,7 +136,9 @@ function CollectionPage() {
               tab === t ? "bg-ink text-ink-foreground shadow-pebble" : "text-muted-foreground"
             }`}
           >
-            {t === "collezione" ? `Collezione · ${finds.length}` : `Traguardi · ${earned.length}/${BADGES.length}`}
+            {t === "collezione"
+              ? `Collezione · ${finds.length}`
+              : `Traguardi · ${earned.length}/${BADGES.length}`}
           </button>
         ))}
       </div>
@@ -138,13 +171,20 @@ function CollectionPage() {
                   loading="lazy"
                 />
                 <div className="px-1.5 pb-1.5 pt-2">
-                  <h2 className="truncate text-base leading-tight">{find.rock?.name ?? "Sasso rimosso"}</h2>
+                  <h2 className="truncate text-base leading-tight">
+                    {find.rock?.name ?? "Sasso rimosso"}
+                  </h2>
                   <p className="mt-0.5 truncate text-[11px] font-semibold text-muted-foreground">
-                    {new Date(find.found_at).toLocaleDateString("it-IT", { day: "numeric", month: "short" })}
+                    {new Date(find.found_at).toLocaleDateString("it-IT", {
+                      day: "numeric",
+                      month: "short",
+                    })}
                     {find.city ? ` · ${find.city}` : ""}
                   </p>
                   {find.rock?.clue && (
-                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{find.rock.clue}</p>
+                    <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                      {find.rock.clue}
+                    </p>
                   )}
                 </div>
               </article>
@@ -176,7 +216,9 @@ function CollectionPage() {
                       >
                         <span
                           className={`grid h-14 w-14 place-items-center rounded-[1.1rem] text-[1.7rem] ${
-                            unlocked ? `${CATEGORY_TONE[category]} shadow-pebble` : "bg-border/70 grayscale"
+                            unlocked
+                              ? `${CATEGORY_TONE[category]} shadow-pebble`
+                              : "bg-border/70 grayscale"
                           }`}
                         >
                           <span className={unlocked ? "" : "opacity-35"}>{badge.icon}</span>
@@ -257,7 +299,9 @@ function Stat({
     <div className="pebble-card flex flex-col items-center rounded-[1.3rem] px-1 py-3 text-center">
       <span className={`grid h-8 w-8 place-items-center rounded-xl ${tone}`}>{icon}</span>
       <p className="mt-1.5 font-display text-2xl leading-none text-foreground">{value}</p>
-      <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
     </div>
   );
 }

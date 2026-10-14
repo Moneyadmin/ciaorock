@@ -22,7 +22,10 @@ export const verifyRockPhoto = createServerFn({ method: "POST" })
     const { createOpenRouter, VISION_MODEL } = await import("./ai.server");
     const openrouter = createOpenRouter();
     if (!openrouter) {
-      return { approved: false, message: "Servizio di verifica non disponibile. Riprova più tardi." };
+      return {
+        approved: false,
+        message: "Servizio di verifica non disponibile. Riprova più tardi.",
+      };
     }
 
     try {
@@ -56,14 +59,23 @@ export const verifyRockPhoto = createServerFn({ method: "POST" })
       };
     } catch (error) {
       if (NoObjectGeneratedError.isInstance(error)) {
-        return { approved: false, message: "Non ho capito la foto. Riprova con un'immagine più nitida." };
+        return {
+          approved: false,
+          message: "Non ho capito la foto. Riprova con un'immagine più nitida.",
+        };
       }
       const message = error instanceof Error ? error.message : "";
       if (message.includes("429")) {
-        return { approved: false, message: "Troppe verifiche in poco tempo: riprova tra qualche istante." };
+        return {
+          approved: false,
+          message: "Troppe verifiche in poco tempo: riprova tra qualche istante.",
+        };
       }
       if (message.includes("402")) {
-        return { approved: false, message: "Crediti AI esauriti: la verifica foto non è disponibile." };
+        return {
+          approved: false,
+          message: "Crediti AI esauriti: la verifica foto non è disponibile.",
+        };
       }
       return { approved: false, message: "Verifica della foto non riuscita. Riprova." };
     }
@@ -92,7 +104,10 @@ export const matchRockPhoto = createServerFn({ method: "POST" })
     const { createOpenRouter, VISION_MODEL } = await import("./ai.server");
     const openrouter = createOpenRouter();
     if (!openrouter) {
-      return { approved: false, message: "Servizio di verifica non disponibile. Riprova più tardi." };
+      return {
+        approved: false,
+        message: "Servizio di verifica non disponibile. Riprova più tardi.",
+      };
     }
 
     try {
@@ -132,14 +147,23 @@ export const matchRockPhoto = createServerFn({ method: "POST" })
       return { approved: true, message: `Sasso riconosciuto: ${verdict.reason}` };
     } catch (error) {
       if (NoObjectGeneratedError.isInstance(error)) {
-        return { approved: false, message: "Non ho capito la foto. Riprova con un'immagine più nitida." };
+        return {
+          approved: false,
+          message: "Non ho capito la foto. Riprova con un'immagine più nitida.",
+        };
       }
       const message = error instanceof Error ? error.message : "";
       if (message.includes("429")) {
-        return { approved: false, message: "Troppe verifiche in poco tempo: riprova tra qualche istante." };
+        return {
+          approved: false,
+          message: "Troppe verifiche in poco tempo: riprova tra qualche istante.",
+        };
       }
       if (message.includes("402")) {
-        return { approved: false, message: "Crediti AI esauriti: la verifica foto non è disponibile." };
+        return {
+          approved: false,
+          message: "Crediti AI esauriti: la verifica foto non è disponibile.",
+        };
       }
       return { approved: false, message: "Verifica della foto non riuscita. Riprova." };
     }

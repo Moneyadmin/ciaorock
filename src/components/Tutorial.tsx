@@ -45,7 +45,9 @@ type Step = { art: ReactNode; title: string; body: ReactNode };
 
 function Tile({ children, className = "bg-brand" }: { children: ReactNode; className?: string }) {
   return (
-    <span className={`grid h-20 w-20 place-items-center rounded-[1.6rem] text-white shadow-glow ${className}`}>
+    <span
+      className={`grid h-20 w-20 place-items-center rounded-[1.6rem] text-white shadow-glow ${className}`}
+    >
       {children}
     </span>
   );
@@ -63,7 +65,9 @@ function Point({ icon, children }: { icon: ReactNode; children: ReactNode }) {
 }
 
 function Pin({ found }: { found: boolean }) {
-  return <span className="inline-block" dangerouslySetInnerHTML={{ __html: rockPinHtml({ found }) }} />;
+  return (
+    <span className="inline-block" dangerouslySetInnerHTML={{ __html: rockPinHtml({ found }) }} />
+  );
 }
 
 const STEPS: Step[] = [
@@ -72,9 +76,11 @@ const STEPS: Step[] = [
     title: "Benvenuto in Ciao Rock!",
     body: (
       <p className="text-[15px] leading-relaxed text-muted-foreground">
-        Una caccia al tesoro vera, per strada: c'è chi <strong className="text-foreground">dipinge</strong> un
-        sasso e lo <strong className="text-foreground">nasconde</strong>, e chi lo <strong className="text-foreground">trova</strong>{" "}
-        seguendo la mappa e gli indizi. Ti spiego tutto in 6 passi.
+        Una caccia al tesoro vera, per strada: c'è chi{" "}
+        <strong className="text-foreground">dipinge</strong> un sasso e lo{" "}
+        <strong className="text-foreground">nasconde</strong>, e chi lo{" "}
+        <strong className="text-foreground">trova</strong> seguendo la mappa e gli indizi. Ti spiego
+        tutto in 6 passi.
       </p>
     ),
   },
@@ -92,7 +98,8 @@ const STEPS: Step[] = [
     body: (
       <ul className="space-y-3">
         <Point icon={<MapPin className="h-4 w-4" />}>
-          Il pin <strong>viola</strong> è un sasso da trovare, quello <strong>verde</strong> l'hai già trovato.
+          Il pin <strong>viola</strong> è un sasso da trovare, quello <strong>verde</strong> l'hai
+          già trovato.
         </Point>
         <Point icon={<Sparkles className="h-4 w-4" />}>
           Il cerchio col numero raggruppa più sassi vicini: avvicina la mappa per separarli.
@@ -112,10 +119,12 @@ const STEPS: Step[] = [
     title: "Trovalo e scatta la foto",
     body: (
       <ul className="space-y-3">
-        <Point icon={<MapPin className="h-4 w-4" />}>Vai sul posto e cerca il sasso seguendo l'indizio.</Point>
+        <Point icon={<MapPin className="h-4 w-4" />}>
+          Vai sul posto e cerca il sasso seguendo l'indizio.
+        </Point>
         <Point icon={<Camera className="h-4 w-4" />}>
-          Quando lo trovi tocca <strong>"L'ho trovato!"</strong> e scatta la foto-prova: l'AI controlla che sia
-          proprio quel sasso.
+          Quando lo trovi tocca <strong>"L'ho trovato!"</strong> e scatta la foto-prova: l'AI
+          controlla che sia proprio quel sasso.
         </Point>
         <Point icon={<Star className="h-4 w-4" />}>
           Guadagni i suoi punti e voti quanto era difficile trovarlo.
@@ -153,8 +162,9 @@ const STEPS: Step[] = [
     title: "Fai viaggiare i sassi",
     body: (
       <p className="text-[15px] leading-relaxed text-muted-foreground">
-        Puoi prendere un sasso e <strong className="text-foreground">nasconderlo da un'altra parte</strong> con un
-        nuovo indizio e una nuova foto. Così ogni sasso gira la città (e magari il mondo!).
+        Puoi prendere un sasso e{" "}
+        <strong className="text-foreground">nasconderlo da un'altra parte</strong> con un nuovo
+        indizio e una nuova foto. Così ogni sasso gira la città (e magari il mondo!).
       </p>
     ),
   },
@@ -259,14 +269,21 @@ export function Tutorial({ userId, onClose }: { userId: string; onClose: () => v
           ))}
         </div>
         {!last && (
-          <button type="button" onClick={close} className="press rounded-full px-3 py-1.5 text-sm font-extrabold text-muted-foreground">
+          <button
+            type="button"
+            onClick={close}
+            className="press rounded-full px-3 py-1.5 text-sm font-extrabold text-muted-foreground"
+          >
             Salta
           </button>
         )}
       </div>
 
       <div className="relative mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center overflow-y-auto px-6 text-center">
-        <div key={index} className="flex w-full flex-col items-center animate-in fade-in slide-in-from-right-4 duration-300">
+        <div
+          key={index}
+          className="flex w-full flex-col items-center animate-in fade-in slide-in-from-right-4 duration-300"
+        >
           <div className="grid h-28 place-items-center">{step.art}</div>
           <h2 id="tutorial-title" className="mt-6 text-[2rem] leading-tight">
             {step.title}
