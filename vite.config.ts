@@ -17,8 +17,17 @@ export default defineConfig(({ command }) => ({
         client: { files: ["**/server/**"], specifiers: ["server-only"] },
       },
     }),
-    // Build a standalone Node server in .output/ (run with `node .output/server/index.mjs`).
-    ...(command === "build" ? [nitro({ preset: "node-server" })] : []),
+    // Build target: a standalone Node server in .output/ by default (Docker/OCI/Render), or a
+    // Cloudflare Worker with NITRO_PRESET=cloudflare-module (see `npm run build:cloudflare`).
+    ...(command === "build"
+      ? [
+          nitro({
+            preset: process.env["NITRO_PRESET"] || "node-server",
+            // wrangler.jsonc at the repo root is the single source of the Worker config
+            cloudflare: { deployConfig: false, nodeCompat: true },
+          }),
+        ]
+      : []),
     viteReact(),
   ],
   resolve: {

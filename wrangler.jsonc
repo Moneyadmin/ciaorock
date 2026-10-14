@@ -1,0 +1,16 @@
+{
+  // Cloudflare Worker di Ciao Rock. Build: `npm run build:cloudflare` (vedi README).
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ciaorock",
+  "main": ".output/server/index.mjs",
+  "compatibility_date": "2026-09-01",
+  // nodejs_compat: moduli node:* (crypto, buffer…) e process.env popolato con variabili e segreti
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".output/public",
+    "binding": "ASSETS"
+  },
+  "observability": { "enabled": true },
+  // Il limite di CPU per richiesta (piano Paid). Le attese di rete (AI, Supabase) non contano.
+  "limits": { "cpu_ms": 30000 }
+}

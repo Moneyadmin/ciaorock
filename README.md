@@ -98,6 +98,57 @@ comando gira. In alternativa pubblica una versione di prova sulla VM OCI (sotto)
 > Le migrazioni nel repository sono quelle generate da Lovable. Prima di spegnere il vecchio progetto conviene
 > confrontarle con lo schema reale (es. con un `pg_dump --schema-only`) per essere sicuri che non manchi nulla.
 
+## Pubblicare su Cloudflare Workers (consigliato)
+
+L'app gira come Worker (`wrangler.jsonc`), con deploy automatico da GitHub tramite *Workers Builds*.
+Con il piano Workers Paid (5 $/mese per account, condiviso con gli altri Worker dello stesso account) non ci
+sono problemi di tempo di calcolo per le verifiche delle foto.
+
+### 1. Collegare il repository
+
+Dashboard Cloudflare → **Workers & Pages → Create → Import a repository** → GitHub → `Moneyadmin/ciaorock`.
+
+| Campo | Valore |
+| --- | --- |
+| Project name | `ciaorock` (deve coincidere con `name` in `wrangler.jsonc`) |
+| Production branch | `main` |
+| Build command | `npm run build:cloudflare` |
+| Deploy command | `npx wrangler deploy` |
+| Root directory | `/` |
+
+In **Build variables** (servono durante la build, finiscono nel codice del browser):
+`VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID`.
+
+### 2. Variabili e segreti del Worker
+
+Worker `ciaorock` → **Settings → Variables and Secrets** (tipo *Secret* per le chiavi):
+
+| Nome | Tipo |
+| --- | --- |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `PUBLIC_SITE_URL` | Text |
+| `SUPABASE_SERVICE_ROLE_KEY`, `OPENROUTER_API_KEY`, `PHOTO_TOKEN_SECRET` | Secret |
+
+`PHOTO_TOKEN_SECRET`: una stringa casuale lunga (es. `openssl rand -base64 48`).
+Le stesse operazioni da terminale: `npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY` ecc.
+
+### 3. Dominio
+
+Il dominio deve essere una zona dello **stesso account Cloudflare** (aggiungilo e cambia i nameserver dal
+registrar). Poi Worker `ciaorock` → **Settings → Domains & Routes → Add → Custom domain** → es.
+`ciaorock.it` o `www.ciaorock.it`: Cloudflare crea DNS e certificato da solo. Ricordati di aggiornare
+**Site URL** in Supabase (*Authentication → URL Configuration*) e `PUBLIC_SITE_URL`.
+
+Senza dominio l'app risponde comunque su `https://ciaorock.<account>.workers.dev`.
+
+### Provare il Worker in locale
+
+```sh
+cp .env .dev.vars            # wrangler legge i segreti da .dev.vars (ignorato da git)
+npm run preview:cloudflare   # build + wrangler dev su http://localhost:8787
+```
+
+Ogni push su `main` viene pubblicato; i push su altri branch creano anteprime separate.
+
 ## Pubblicare su Render (gratis, con il proprio dominio)
 
 Il modo più semplice. Il piano gratuito si addormenta dopo ~15 minuti senza visite: la prima apertura
