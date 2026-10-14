@@ -121,24 +121,27 @@ In **Build variables** (servono durante la build, finiscono nel codice del brows
 
 ### 2. Variabili e segreti del Worker
 
-Worker `ciaorock` → **Settings → Variables and Secrets** (tipo *Secret* per le chiavi):
+Worker `ciaorock` → **Settings → Variables and Secrets**:
 
 | Nome | Tipo |
 | --- | --- |
-| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `PUBLIC_SITE_URL` | Text |
+| `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Text |
 | `SUPABASE_SERVICE_ROLE_KEY`, `OPENROUTER_API_KEY`, `PHOTO_TOKEN_SECRET` | Secret |
 
-`PHOTO_TOKEN_SECRET`: una stringa casuale lunga (es. `openssl rand -base64 48`).
-Le stesse operazioni da terminale: `npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY` ecc.
+`PUBLIC_SITE_URL` è già in `wrangler.jsonc`. `PHOTO_TOKEN_SECRET`: una stringa casuale lunga (es.
+`openssl rand -base64 48`). Le stesse operazioni da terminale: `npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY`
+ecc. Grazie a `keep_vars` i deploy non cancellano le variabili impostate dalla dashboard.
 
-### 3. Dominio
+### 3. Dominio: ciaorock.com
 
-Il dominio deve essere una zona dello **stesso account Cloudflare** (aggiungilo e cambia i nameserver dal
-registrar). Poi Worker `ciaorock` → **Settings → Domains & Routes → Add → Custom domain** → es.
-`ciaorock.it` o `www.ciaorock.it`: Cloudflare crea DNS e certificato da solo. Ricordati di aggiornare
-**Site URL** in Supabase (*Authentication → URL Configuration*) e `PUBLIC_SITE_URL`.
+Il dominio è registrato su Cloudflare nello stesso account e `wrangler.jsonc` lo collega già al Worker
+(`ciaorock.com` e `www.ciaorock.com`, che reindirizza a `ciaorock.com`): al primo deploy Cloudflare crea
+DNS e certificato. Se il deploy segnala che esistono già record DNS per quei nomi, eliminali in
+*DNS → Records* e rilancia il deploy.
 
-Senza dominio l'app risponde comunque su `https://ciaorock.<account>.workers.dev`.
+In Supabase → *Authentication → URL Configuration* imposta **Site URL** = `https://ciaorock.com`.
+
+L'app risponde anche su `https://ciaorock.<account>.workers.dev`.
 
 ### Provare il Worker in locale
 
@@ -157,12 +160,12 @@ successiva impiega 30-60 secondi (per non farlo dormire serve il piano a pagamen
 1. Su [render.com](https://render.com) accedi con GitHub e scegli **New → Blueprint**, poi questo repository:
    Render legge `render.yaml`.
 2. Inserisci i valori richiesti (gli stessi del `.env`, vedi `.env.example`). `PHOTO_TOKEN_SECRET` viene
-   generato da solo. In `PUBLIC_SITE_URL` metti l'indirizzo definitivo, es. `https://ciaorock.tuodominio.it`.
+   generato da solo. In `PUBLIC_SITE_URL` metti l'indirizzo definitivo, es. `https://ciaorock.com`.
 3. Dopo il primo deploy l'app risponde su `https://ciaorock-xxxx.onrender.com`.
 4. **Dominio tuo**: nel servizio → *Settings → Custom Domains → Add* e scrivi il dominio. Poi, dal pannello
    DNS del registrar:
-   - sottodominio (es. `ciaorock.tuodominio.it`): record **CNAME** verso `ciaorock-xxxx.onrender.com`;
-   - dominio principale (es. `tuodominio.it`): il record **A** (o ALIAS/ANAME) che Render indica.
+   - sottodominio (es. `app.ciaorock.com`): record **CNAME** verso `ciaorock-xxxx.onrender.com`;
+   - dominio principale (es. `ciaorock.com`): il record **A** (o ALIAS/ANAME) che Render indica.
 
    Render verifica il dominio ed emette da solo il certificato HTTPS (di solito in pochi minuti).
 5. In Supabase → *Authentication → URL Configuration* imposta **Site URL** sul tuo dominio.
@@ -180,7 +183,7 @@ Ogni push su `main` ripubblica l'app automaticamente.
    sudo iptables -I INPUT 6 -p udp --dport 443 -j ACCEPT
    sudo netfilter-persistent save
    ```
-3. **DNS**: crea un record `A` del dominio (es. `ciaorock.tuodominio.it`) verso l'IP pubblico della VM.
+3. **DNS**: crea un record `A` del dominio (es. `app.ciaorock.com`) verso l'IP pubblico della VM.
 4. **Docker**:
    ```sh
    curl -fsSL https://get.docker.com | sudo sh

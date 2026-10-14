@@ -15,7 +15,7 @@ export function createOpenRouter() {
     apiKey,
     supportsStructuredOutputs: true,
     headers: {
-      "HTTP-Referer": process.env["PUBLIC_SITE_URL"] || "https://ciaorock.app",
+      "HTTP-Referer": process.env["PUBLIC_SITE_URL"] || "https://ciaorock.com",
       "X-Title": "Ciao Rock",
     },
   });

@@ -44,8 +44,18 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+/** www.ciaorock.com → ciaorock.com: un solo indirizzo, una sola sessione di login. */
+function wwwRedirect(request: Request) {
+  const url = new URL(request.url);
+  if (!url.hostname.startsWith("www.")) return null;
+  url.hostname = url.hostname.slice(4);
+  return Response.redirect(url.toString(), 301);
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const redirect = wwwRedirect(request);
+    if (redirect) return redirect;
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

@@ -10,6 +10,18 @@
     "directory": ".output/public",
     "binding": "ASSETS"
   },
+  // Dominio: www.ciaorock.com reindirizza a ciaorock.com (src/server.ts).
+  "routes": [
+    { "pattern": "ciaorock.com", "custom_domain": true },
+    { "pattern": "www.ciaorock.com", "custom_domain": true }
+  ],
+  // Variabili pubbliche. Le chiavi segrete si impostano come Secret nella dashboard
+  // (o con `wrangler secret put`): non vanno mai in questo file.
+  "vars": {
+    "PUBLIC_SITE_URL": "https://ciaorock.com"
+  },
+  // Non cancellare le variabili di testo impostate dalla dashboard (es. SUPABASE_URL) a ogni deploy.
+  "keep_vars": true,
   "observability": { "enabled": true },
   // Il limite di CPU per richiesta (piano Paid). Le attese di rete (AI, Supabase) non contano.
   "limits": { "cpu_ms": 30000 }
