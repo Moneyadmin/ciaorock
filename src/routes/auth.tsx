@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/useSession";
+import { Loader2 } from "lucide-react";
+import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -105,43 +107,46 @@ function AuthPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-10">
-      <div className="mb-8 text-center">
-        <div className="mx-auto grid h-20 w-20 place-items-center rounded-full bg-secondary text-4xl shadow-pebble">
-          🪨
-        </div>
-        <h1 className="mt-4 text-4xl font-bold text-foreground">RockDex</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+    <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-md flex-col justify-center overflow-hidden px-5 py-10">
+      <div className="pointer-events-none absolute -left-24 -top-24 h-72 w-72 rounded-full bg-primary/25 blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 top-40 h-72 w-72 rounded-full bg-paint/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 left-10 h-60 w-60 rounded-full bg-lime/30 blur-3xl" />
+      <div className="relative mb-8 text-center">
+        <Logo className="mx-auto h-24 w-24 -rotate-6 drop-shadow-[0_18px_30px_rgba(123,92,255,0.45)]" />
+        <h1 className="mt-6 text-5xl leading-none">
+          Ciao <span className="text-brand">Rock</span>
+        </h1>
+        <p className="mx-auto mt-3 max-w-[18rem] text-[15px] font-medium text-muted-foreground">
           Dipingi, nascondi e trova sassi in giro per il mondo.
         </p>
       </div>
 
       {needsNickname ? (
-        <form onSubmit={saveNickname} className="pebble-card space-y-4 p-5">
+        <form onSubmit={saveNickname} className="glass relative space-y-4 rounded-[2rem] p-5">
           <div>
-            <h2 className="text-xl font-bold">Scegli il tuo nickname</h2>
+            <h2 className="text-2xl">Scegli il tuo nickname</h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Sarà unico e visibile agli altri cercatori.
             </p>
           </div>
           <Field label="Nickname" value={nickname} onChange={setNickname} placeholder="es. SassoVolante" />
-          {error && <p className="text-sm font-semibold text-destructive">{error}</p>}
+          {error && <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">{error}</p>}
           <PrimaryButton disabled={busy}>Entra in RockDex</PrimaryButton>
         </form>
       ) : (
-        <form onSubmit={submit} className="pebble-card space-y-4 p-5">
-          <div className="flex rounded-xl bg-muted p-1 text-sm font-bold">
+        <form onSubmit={submit} className="glass relative space-y-4 rounded-[2rem] p-5">
+          <div className="flex rounded-2xl bg-muted p-1 text-sm font-extrabold">
             <button
               type="button"
               onClick={() => setMode("login")}
-              className={`flex-1 rounded-lg py-2 ${mode === "login" ? "bg-card text-foreground shadow-pebble" : "text-muted-foreground"}`}
+              className={`press flex-1 rounded-xl py-2.5 ${mode === "login" ? "bg-ink text-ink-foreground shadow-pebble" : "text-muted-foreground"}`}
             >
               Accedi
             </button>
             <button
               type="button"
               onClick={() => setMode("signup")}
-              className={`flex-1 rounded-lg py-2 ${mode === "signup" ? "bg-card text-foreground shadow-pebble" : "text-muted-foreground"}`}
+              className={`press flex-1 rounded-xl py-2.5 ${mode === "signup" ? "bg-ink text-ink-foreground shadow-pebble" : "text-muted-foreground"}`}
             >
               Registrati
             </button>
@@ -154,7 +159,7 @@ function AuthPage() {
             type="password"
             placeholder="••••••"
           />
-          {error && <p className="text-sm font-semibold text-destructive">{error}</p>}
+          {error && <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">{error}</p>}
           <PrimaryButton disabled={busy}>{mode === "login" ? "Accedi" : "Crea account"}</PrimaryButton>
         </form>
       )}
@@ -177,7 +182,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
+      <span className="mb-1.5 block pl-1 text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
         {label}
       </span>
       <input
@@ -185,7 +190,7 @@ function Field({
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-input bg-background px-4 py-3 text-base text-foreground outline-none focus:border-ring"
+        className="w-full rounded-2xl border border-input bg-card px-4 py-3.5 text-base text-foreground outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
       />
     </label>
   );
@@ -196,8 +201,9 @@ function PrimaryButton({ children, disabled }: { children: React.ReactNode; disa
     <button
       type="submit"
       disabled={disabled}
-      className="w-full rounded-xl bg-primary py-3 text-base font-bold text-primary-foreground shadow-pebble active:scale-[0.99] disabled:opacity-60"
+      className="press bg-brand flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-extrabold text-white shadow-glow disabled:opacity-60"
     >
+      {disabled && <Loader2 className="h-5 w-5 animate-spin" />}
       {children}
     </button>
   );

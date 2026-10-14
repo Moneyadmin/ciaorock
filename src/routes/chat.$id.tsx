@@ -1,7 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { ChevronLeft, Loader2, SendHorizontal, Trash2 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { Avatar } from "@/components/Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import {
   deleteMessage,
@@ -97,26 +99,32 @@ function ChatPage() {
 
   return (
     <AppShell title={other ? `@${other.nickname}` : "Chat"} subtitle="Messaggi in tempo reale">
-      <Link to="/messaggi" className="text-sm font-bold text-primary">
-        ← Messaggi
+      <Link
+        to="/messaggi"
+        className="press inline-flex items-center gap-1 rounded-full bg-muted py-1.5 pl-2 pr-3.5 text-sm font-extrabold text-muted-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" strokeWidth={3} /> Messaggi
       </Link>
-      <div className="mt-3 space-y-2 pb-44">
+      <div className="mt-4 space-y-1.5 pb-40">
         {messages.length === 0 && (
-          <p className="pebble-card p-4 text-sm text-muted-foreground">
-            Nessun messaggio. Scrivi il primo! 👋
-          </p>
+          <div className="flex flex-col items-center py-10 text-center">
+            {other && <Avatar name={other.nickname} className="h-16 w-16 text-3xl shadow-lift" />}
+            <p className="mt-3 text-sm font-semibold text-muted-foreground">Nessun messaggio. Scrivi il primo!</p>
+          </div>
         )}
         {messages.map((m) => {
           const mine = m.sender_id === userId;
           return (
             <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
               <div
-                className={`max-w-[78%] rounded-2xl px-3 py-2 text-sm ${
-                  mine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                className={`max-w-[78%] rounded-[1.3rem] px-3.5 py-2.5 text-[15px] ${
+                  mine
+                    ? "bg-brand rounded-br-md text-white shadow-pebble"
+                    : "rounded-bl-md bg-card text-foreground shadow-pebble ring-1 ring-border"
                 }`}
               >
                 <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                <div className="mt-0.5 flex items-center justify-between gap-3 text-[10px] opacity-70">
+                <div className="mt-1 flex items-center justify-between gap-3 text-[10px] font-semibold opacity-70">
                   <span>
                     {new Date(m.created_at).toLocaleTimeString("it-IT", {
                       hour: "2-digit",
@@ -128,9 +136,9 @@ function ChatPage() {
                       type="button"
                       onClick={() => void remove(m)}
                       aria-label="Elimina messaggio"
-                      className="font-bold underline"
+                      className="press inline-flex items-center gap-0.5 font-bold"
                     >
-                      🗑️ Elimina
+                      <Trash2 className="h-3 w-3" /> Elimina
                     </button>
                   )}
                 </div>
@@ -145,20 +153,22 @@ function ChatPage() {
           e.preventDefault();
           void send();
         }}
-        className="fixed inset-x-0 bottom-20 z-[850] mx-auto flex max-w-md gap-2 border-t border-border bg-background px-4 py-3"
+        className="fixed inset-x-0 bottom-[calc(6.75rem+env(safe-area-inset-bottom))] z-[850] mx-auto flex max-w-md gap-2 px-3"
       >
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
           maxLength={1000}
           placeholder="Scrivi un messaggio…"
-          className="flex-1 rounded-xl border border-input bg-background px-3 py-2.5 outline-none focus:border-ring"
+          aria-label="Messaggio"
+          className="glass flex-1 rounded-full px-5 py-3.5 text-base outline-none focus:ring-4 focus:ring-ring/20"
         />
         <button
           disabled={sending || !text.trim()}
-          className="rounded-xl bg-primary px-4 font-bold text-primary-foreground disabled:opacity-50"
+          aria-label="Invia"
+          className="press bg-brand grid h-[3.25rem] w-[3.25rem] shrink-0 place-items-center rounded-full text-white shadow-glow disabled:opacity-50"
         >
-          Invia
+          {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <SendHorizontal className="h-5 w-5" />}
         </button>
       </form>
     </AppShell>

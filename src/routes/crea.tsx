@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { Bot, Camera, CheckCircle2, Crosshair, FileText, Loader2, MapPin, PartyPopper, ScanSearch, WifiOff } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { createRock } from "@/lib/api";
 import { clearDraft, enqueue, readDraft, saveDraft } from "@/lib/offline";
@@ -185,15 +186,15 @@ function CreatePage() {
     try {
       if (offline) {
         enqueue({ kind: "create", payload });
-        setDone("📴 Sasso salvato offline: verrà pubblicato al ritorno del segnale.");
+        setDone("Sasso salvato offline: verrà pubblicato al ritorno del segnale.");
       } else {
         const id = await createRock(payload);
-        setDone("🎉 Sasso nascosto! 🤖 L'AI sta valutando il nascondiglio…");
+        setDone("Sasso nascosto! L'AI sta valutando il nascondiglio…");
         try {
           const r = await score({ data: { rockId: id } });
-          setDone(`🎉 Sasso nascosto! 🤖 L'AI gli ha assegnato ${r.points} punti: ${r.reason}`);
+          setDone(`Sasso nascosto! L'AI gli ha assegnato ${r.points} punti: ${r.reason}`);
         } catch {
-          setDone("🎉 Sasso nascosto! I punti verranno calcolati a breve.");
+          setDone("Sasso nascosto! I punti verranno calcolati a breve.");
         }
       }
       clearDraft();
@@ -213,13 +214,18 @@ function CreatePage() {
   return (
     <AppShell title="Crea un sasso" subtitle="Solo sassi con faccia o disegno dipinto!">
       {done && (
-        <div className="mb-4 rounded-2xl bg-primary/10 p-4 text-sm font-semibold text-foreground">
-          {done}
+        <div className="bg-brand mb-4 flex items-start gap-3 rounded-[1.4rem] p-4 text-sm font-bold text-white shadow-glow animate-in fade-in slide-in-from-top-2">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/20">
+            {done.startsWith("Sasso salvato offline") ? <WifiOff className="h-5 w-5" /> : <PartyPopper className="h-5 w-5" />}
+          </span>
+          <span className="pt-0.5">{done}</span>
         </div>
       )}
       {draftFound && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-muted p-4 text-sm">
-          <span className="text-muted-foreground">📝 Bozza recuperata automaticamente.</span>
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl bg-secondary p-3 pl-4 text-sm">
+          <span className="inline-flex items-center gap-2 font-semibold text-secondary-foreground">
+            <FileText className="h-4 w-4" /> Bozza recuperata automaticamente.
+          </span>
           <button
             type="button"
             onClick={() => {
@@ -231,28 +237,34 @@ function CreatePage() {
               setApproved(false);
               setVerdict(null);
             }}
-            className="font-bold text-destructive"
+            className="press rounded-xl bg-card px-3 py-1.5 font-extrabold text-destructive"
           >
             Scarta
           </button>
         </div>
       )}
 
-      <form onSubmit={submit} className="space-y-4">
-        <div className="pebble-card p-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            Foto della faccia dipinta (obbligatoria)
-          </p>
+      <form onSubmit={submit} className="space-y-5">
+        <div>
+          <StepLabel n={1} label="Foto della faccia dipinta (obbligatoria)" />
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="mt-3 grid h-44 w-full place-items-center overflow-hidden rounded-2xl border-2 border-dashed border-border bg-muted"
+            className="press relative grid h-56 w-full place-items-center overflow-hidden rounded-[1.6rem] border-2 border-dashed border-primary/35 bg-secondary/60"
           >
             {photo ? (
-              <img src={photo} alt="Anteprima del sasso dipinto" className="h-full w-full object-cover" />
+              <>
+                <img src={photo} alt="Anteprima del sasso dipinto" className="h-full w-full object-cover" />
+                <span className="glass absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-extrabold">
+                  <Camera className="h-3.5 w-3.5" /> Cambia foto
+                </span>
+              </>
             ) : (
-              <span className="px-6 text-center text-sm text-muted-foreground">
-                📷 Tocca per caricare una foto nitida del sasso con la faccia o il disegno dipinto
+              <span className="flex flex-col items-center gap-3 px-8 text-center text-sm font-semibold text-secondary-foreground">
+                <span className="bg-brand grid h-14 w-14 place-items-center rounded-2xl text-white shadow-glow">
+                  <Camera className="h-7 w-7" />
+                </span>
+                Tocca per caricare una foto nitida del sasso con la faccia o il disegno dipinto
               </span>
             )}
           </button>
@@ -266,88 +278,111 @@ function CreatePage() {
           />
           {(checking || verdict) && (
             <div
-              className={`mt-3 rounded-xl p-3 text-sm font-semibold ${
+              className={`mt-3 flex items-start gap-2 rounded-2xl p-3 text-sm font-semibold ${
                 checking
                   ? "bg-muted text-muted-foreground"
                   : approved
-                    ? "bg-primary/10 text-foreground"
+                    ? "bg-moss/15 text-foreground"
                     : "bg-destructive/10 text-destructive"
               }`}
             >
-              {checking ? "🔍 Verifica AI della faccia dipinta in corso…" : verdict}
+              {checking ? (
+                <>
+                  <ScanSearch className="mt-0.5 h-4 w-4 shrink-0 animate-pulse" /> Verifica AI della faccia dipinta in corso…
+                </>
+              ) : (
+                <>
+                  {approved && <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-moss" />}
+                  {verdict}
+                </>
+              )}
             </div>
           )}
         </div>
 
-        <TextField label="Nome del sasso" value={name} onChange={setName} placeholder="es. Volpe Rossa" />
+        <TextField n={2} label="Nome del sasso" value={name} onChange={setName} placeholder="es. Volpe Rossa" />
 
         <label className="block">
-          <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            Indizio per trovarlo
-          </span>
+          <StepLabel n={3} label="Indizio per trovarlo" />
           <textarea
             value={clue}
             onChange={(e) => setClue(e.target.value)}
             rows={3}
             placeholder="es. Sotto la terza panchina del viale, tra le radici."
-            className="w-full rounded-xl border border-input bg-background px-4 py-3 text-base outline-none focus:border-ring"
+            className="w-full rounded-2xl border border-input bg-card px-4 py-3.5 text-base shadow-pebble outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
           />
         </label>
 
         <div>
-          <span className="mb-2 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
-            Difficoltà
-          </span>
-          <div className="grid grid-cols-3 gap-2">
+          <StepLabel n={4} label="Difficoltà" />
+          <div className="grid grid-cols-3 gap-1 rounded-2xl bg-muted p-1">
             {LEVELS.map((d) => (
               <button
                 key={d}
                 type="button"
                 onClick={() => setDifficulty(d)}
-                className={`rounded-xl py-2.5 text-sm font-bold ${
+                aria-pressed={difficulty === d}
+                className={`press rounded-xl py-2.5 text-sm font-extrabold ${
                   difficulty === d
-                    ? "bg-primary text-primary-foreground shadow-pebble"
-                    : "bg-muted text-muted-foreground"
+                    ? d === "Facile"
+                      ? "bg-moss text-white shadow-pebble"
+                      : d === "Medio"
+                        ? "bg-sun text-ink shadow-pebble"
+                        : "bg-paint text-white shadow-pebble"
+                    : "text-muted-foreground"
                 }`}
               >
                 {d}
               </button>
             ))}
           </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            🤖 Non scegli tu i punti: un'AI legge l'indizio e la difficoltà e assegna da 50 a 2.000 punti. Poi i voti e i commenti dei giocatori li fanno salire o scendere.
+          <p className="mt-2.5 flex gap-2 rounded-2xl bg-secondary/70 p-3 text-xs font-medium text-secondary-foreground">
+            <Bot className="h-4 w-4 shrink-0" />
+            Non scegli tu i punti: un'AI legge l'indizio e la difficoltà e assegna da 50 a 2.000 punti. Poi i voti e i commenti dei giocatori li fanno salire o scendere.
           </p>
         </div>
 
-        <div className="pebble-card space-y-3 p-4 text-sm">
+        <div>
           <div className="flex items-center justify-between">
-            <p className="font-bold">📍 Posizione precisa</p>
-            <button type="button" onClick={() => void refreshGps()} className="font-bold text-primary">
-              Aggiorna GPS
+            <StepLabel n={5} label="Posizione precisa" />
+            <button
+              type="button"
+              onClick={() => void refreshGps()}
+              className="press -mt-1.5 inline-flex items-center gap-1 rounded-full bg-secondary px-3 py-1.5 text-xs font-extrabold text-secondary-foreground"
+            >
+              <Crosshair className="h-3.5 w-3.5" /> Aggiorna GPS
             </button>
           </div>
-          <p className="text-muted-foreground">{gpsLabel}</p>
+          <div className="pebble-card space-y-2.5 rounded-[1.6rem] p-2 text-sm">
+          <p className="flex items-start gap-2 px-2 pt-1 font-medium text-muted-foreground">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+            {gpsLabel}
+          </p>
           <Suspense
             fallback={
-              <div className="grid h-56 place-items-center rounded-2xl bg-muted text-sm text-muted-foreground">
-                Caricamento mappa…
+              <div className="grid h-56 place-items-center rounded-2xl bg-muted text-sm font-semibold text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin" />
               </div>
             }
           >
             <LocationPicker value={position} onChange={pickPosition} />
           </Suspense>
-          <p className="font-mono text-xs text-muted-foreground">
+          <p className="px-2 pb-1 font-mono text-[11px] text-muted-foreground">
             {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
           </p>
+          </div>
         </div>
 
-        {error && <p className="text-sm font-semibold text-destructive">{error}</p>}
+        {error && (
+          <p className="rounded-2xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>
+        )}
 
         <button
           type="submit"
           disabled={busy}
-          className="w-full rounded-xl bg-primary py-3.5 text-base font-bold text-primary-foreground shadow-pebble active:scale-[0.99] disabled:opacity-60"
+          className="press bg-brand flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-extrabold text-white shadow-glow disabled:opacity-60"
         >
+          {busy && <Loader2 className="h-5 w-5 animate-spin" />}
           {busy ? "Salvataggio…" : "Nascondi e registra il sasso"}
         </button>
       </form>
@@ -355,12 +390,23 @@ function CreatePage() {
   );
 }
 
+function StepLabel({ n, label }: { n: number; label: string }) {
+  return (
+    <span className="mb-2 flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-muted-foreground">
+      <span className="grid h-5 w-5 place-items-center rounded-full bg-ink text-[10px] text-lime">{n}</span>
+      {label}
+    </span>
+  );
+}
+
 function TextField({
+  n,
   label,
   value,
   onChange,
   placeholder,
 }: {
+  n: number;
   label: string;
   value: string;
   onChange: (v: string) => void;
@@ -368,14 +414,12 @@ function TextField({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </span>
+      <StepLabel n={n} label={label} />
       <input
         value={value}
         placeholder={placeholder}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-input bg-background px-4 py-3 text-base outline-none focus:border-ring"
+        className="w-full rounded-2xl border border-input bg-card px-4 py-3.5 text-base shadow-pebble outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
       />
     </label>
   );

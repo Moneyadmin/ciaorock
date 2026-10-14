@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Logo } from "./Logo";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -58,10 +59,10 @@ export function InstallPrompt() {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-end bg-foreground/40 p-4">
-      <div className="pebble-card w-full space-y-3 p-5">
-        <p className="text-4xl">🪨</p>
-        <h2 className="text-xl font-bold leading-tight">
+    <div className="fixed inset-0 z-[1000] flex items-end bg-ink/50 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-sm animate-in fade-in">
+      <div className="pebble-card mx-auto w-full max-w-md space-y-3 rounded-[2rem] p-5 animate-in slide-in-from-bottom-8 duration-300">
+        <Logo className="h-14 w-14 -rotate-6" />
+        <h2 className="text-2xl leading-tight">
           Vuoi aggiungere Ciao Rock alla schermata home?
         </h2>
         {iosHelp ? (
@@ -80,7 +81,7 @@ export function InstallPrompt() {
             <button
               type="button"
               onClick={() => void accept()}
-              className="flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-bold text-primary-foreground"
+              className="press bg-brand flex-1 rounded-2xl px-4 py-3.5 text-sm font-extrabold text-white shadow-glow"
             >
               Sì, aggiungila
             </button>
@@ -88,7 +89,7 @@ export function InstallPrompt() {
           <button
             type="button"
             onClick={close}
-            className="flex-1 rounded-xl border border-input px-4 py-3 text-sm font-bold"
+            className="press flex-1 rounded-2xl bg-muted px-4 py-3.5 text-sm font-extrabold text-muted-foreground"
           >
             {iosHelp ? "Ho capito" : "No, grazie"}
           </button>

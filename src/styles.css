@@ -210,8 +210,6 @@
 
 /* ---------- Mappa (Leaflet + base vettoriale MapLibre) ---------- */
 .leaflet-container {
-  height: 100%;
-  width: 100%;
   background: oklch(0.955 0.012 290);
   font-family: var(--font-sans);
 }

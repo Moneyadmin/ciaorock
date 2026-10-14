@@ -48,7 +48,7 @@ export function BottomNav() {
             className="press group -mt-6 mb-2 flex flex-col items-center gap-1 text-[10px] font-bold text-white/55"
             activeProps={{ className: "is-active !text-white" }}
           >
-            <span className="bg-brand grid h-14 w-14 place-items-center rounded-[1.25rem] text-white shadow-glow ring-4 ring-background transition-transform group-[.is-active]:rotate-45">
+            <span className="bg-brand grid h-14 w-14 place-items-center rounded-[1.25rem] text-white shadow-glow ring-4 ring-background transition-shadow group-[.is-active]:ring-lime">
               <Plus className="h-7 w-7" strokeWidth={3} />
             </span>
             Crea

@@ -119,12 +119,12 @@ function UnlockForm({ onUnlocked }: { onUnlocked: () => void }) {
             type="password"
             value={one}
             onChange={(e) => setOne(e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-3 py-2.5"
+            className="w-full rounded-2xl border border-input bg-card px-4 py-3 outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
           />
           <button
             disabled={!one}
             onClick={() => setStep(2)}
-            className="w-full rounded-xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50"
+            className="press w-full rounded-2xl bg-primary py-3.5 font-extrabold text-primary-foreground disabled:opacity-50"
           >
             Avanti
           </button>
@@ -137,12 +137,12 @@ function UnlockForm({ onUnlocked }: { onUnlocked: () => void }) {
             type="password"
             value={two}
             onChange={(e) => setTwo(e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-3 py-2.5"
+            className="w-full rounded-2xl border border-input bg-card px-4 py-3 outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
           />
           <button
             disabled={!two}
             onClick={() => setStep(3)}
-            className="w-full rounded-xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50"
+            className="press w-full rounded-2xl bg-primary py-3.5 font-extrabold text-primary-foreground disabled:opacity-50"
           >
             Avanti
           </button>
@@ -154,12 +154,12 @@ function UnlockForm({ onUnlocked }: { onUnlocked: () => void }) {
           <input
             value={answer}
             onChange={(e) => setAnswer(e.target.value)}
-            className="w-full rounded-xl border border-border bg-background px-3 py-2.5"
+            className="w-full rounded-2xl border border-input bg-card px-4 py-3 outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
           />
           <button
             disabled={!answer || busy}
             onClick={submit}
-            className="w-full rounded-xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50"
+            className="press w-full rounded-2xl bg-primary py-3.5 font-extrabold text-primary-foreground disabled:opacity-50"
           >
             {busy ? "Verifico…" : "Sblocca"}
           </button>
@@ -232,13 +232,13 @@ function AdminTools() {
 
   return (
     <div className="space-y-4 pb-24">
-      <div className="flex rounded-xl bg-muted p-1 text-sm font-bold">
+      <div className="flex rounded-2xl bg-muted p-1 text-sm font-extrabold">
         {(["sassi", "punti", "giocatori", "giorni", "avvisi", "cestino"] as const).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 rounded-lg py-2 capitalize ${
-              tab === t ? "bg-card text-foreground shadow-pebble" : "text-muted-foreground"
+            className={`flex-1 rounded-xl py-2 text-xs capitalize ${
+              tab === t ? "bg-ink text-ink-foreground shadow-pebble" : "text-muted-foreground"
             }`}
           >
             {t}
@@ -254,14 +254,14 @@ function AdminTools() {
               value={annTitle}
               onChange={(e) => setAnnTitle(e.target.value)}
               placeholder="Titolo (es. Giornata speciale!)"
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5"
+              className="w-full rounded-2xl border border-input bg-card px-4 py-3 outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
             />
             <textarea
               value={annBody}
               onChange={(e) => setAnnBody(e.target.value)}
               placeholder="Messaggio (es. Ciao, oggi ti regalo un X2 su tutti i punti)"
               rows={3}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5"
+              className="w-full rounded-2xl border border-input bg-card px-4 py-3 outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
             />
             <button
               disabled={!annTitle.trim() || !annBody.trim()}
@@ -272,7 +272,7 @@ function AdminTools() {
                   setAnnBody("");
                 }, "Notifica inviata a tutti")
               }
-              className="w-full rounded-xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50"
+              className="press w-full rounded-2xl bg-primary py-3.5 font-extrabold text-primary-foreground disabled:opacity-50"
             >
               Invia a tutti 📣
             </button>
@@ -368,14 +368,14 @@ function AdminTools() {
               type="date"
               value={newDay}
               onChange={(e) => setNewDay(e.target.value)}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5"
+              className="w-full rounded-2xl border border-input bg-card px-4 py-3 outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
             />
             <input
               type="number"
               min={2}
               value={newMult}
               onChange={(e) => setNewMult(Number(e.target.value))}
-              className="w-full rounded-xl border border-border bg-background px-3 py-2.5"
+              className="w-full rounded-2xl border border-input bg-card px-4 py-3 outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
             />
             <button
               disabled={!newDay}
@@ -385,7 +385,7 @@ function AdminTools() {
                   "Giorno speciale salvato",
                 )
               }
-              className="w-full rounded-xl bg-primary py-3 font-bold text-primary-foreground disabled:opacity-50"
+              className="press w-full rounded-2xl bg-primary py-3.5 font-extrabold text-primary-foreground disabled:opacity-50"
             >
               Attiva punti x{Math.max(2, newMult)}
             </button>
