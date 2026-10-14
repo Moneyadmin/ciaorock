@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { FindRecord } from "@/lib/badges";
+import { claimFindFn, createRockFn, moveRockFn, type GameResult } from "@/lib/game.functions";
 
 export type RockRow = {
   id: string;
@@ -137,6 +138,13 @@ export async function countCreated(userId: string) {
   return count ?? 0;
 }
 
+/** Esito di un'azione di gioco: lancia un errore leggibile se il server la rifiuta. */
+function unwrap(result: GameResult) {
+  if (!result.ok) throw new Error(result.message);
+  return result;
+}
+
+/** Nuovo sasso: il server controlla la foto (o il gettone dell'AI) e lo registra. */
 export async function createRock(input: {
   name: string;
   clue: string;
@@ -144,58 +152,35 @@ export async function createRock(input: {
   lat: number;
   lng: number;
   difficulty: string;
+  token?: string | undefined;
 }) {
-  const { data, error } = await supabase.from("rocks").insert(input).select("id").single();
-  if (error) throw new Error(error.message);
-  return data.id as string;
+  const result = unwrap(await createRockFn({ data: input }));
+  return result.id as string;
 }
 
+/** Sposta un sasso: serve averlo trovato (o averlo creato) ed essere vicino al sasso. */
 export async function moveRock(input: {
   rockId: string;
   clue: string;
   photo: string;
   lat: number;
   lng: number;
-  userId: string;
-  moveCount: number;
+  fromLat: number;
+  fromLng: number;
+  token?: string | undefined;
 }) {
-  const { error } = await supabase
-    .from("rocks")
-    .update({
-      clue: input.clue,
-      photo: input.photo,
-      lat: input.lat,
-      lng: input.lng,
-      hidden_by: input.userId,
-      move_count: input.moveCount + 1,
-    })
-    .eq("id", input.rockId);
-  if (error) throw new Error(error.message);
+  unwrap(await moveRockFn({ data: input }));
 }
 
+/** Registra un ritrovamento: il server controlla distanza e foto-prova. */
 export async function registerFind(input: {
   rockId: string;
   photo: string;
-  lat: number | null;
-  lng: number | null;
-  place: {
-    city: string | null;
-    region: string | null;
-    country: string | null;
-    continent: string | null;
-  };
+  lat: number;
+  lng: number;
+  token?: string | undefined;
 }) {
-  const { error } = await supabase.from("finds").insert({
-    rock_id: input.rockId,
-    photo: input.photo,
-    lat: input.lat,
-    lng: input.lng,
-    city: input.place.city,
-    region: input.place.region,
-    country: input.place.country,
-    continent: input.place.continent,
-  });
-  if (error) throw new Error(error.message);
+  unwrap(await claimFindFn({ data: input }));
 }
 
 export async function searchProfiles(query: string): Promise<ProfileRow[]> {
@@ -489,16 +474,15 @@ export type FriendLocation = {
   updated_at: string | null;
 };
 
-/** Salva la mia posizione attuale sul mio profilo. */
+/** Salva la mia posizione attuale (visibile solo ai miei amici). */
 export async function saveMyLocation(userId: string, lat: number, lng: number) {
   const { error } = await supabase
-    .from("profiles")
-    .update({ latitude: lat, longitude: lng, updated_at: new Date().toISOString() })
-    .eq("id", userId);
+    .from("player_locations")
+    .upsert({ user_id: userId, lat, lng }, { onConflict: "user_id" });
   if (error) throw new Error(error.message);
 }
 
-/** Posizioni degli amici che hanno condiviso il GPS. */
+/** Posizioni degli amici che hanno condiviso il GPS (il database mostra solo quelle degli amici). */
 export async function fetchFriendLocations(userId: string): Promise<FriendLocation[]> {
   const links = await fetchLinks(userId);
   const ids = [
@@ -509,17 +493,19 @@ export async function fetchFriendLocations(userId: string): Promise<FriendLocati
     ),
   ];
   if (!ids.length) return [];
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id,nickname,latitude,longitude,updated_at")
-    .in("id", ids)
-    .not("latitude", "is", null);
+  const [{ data: spots, error }, profs] = await Promise.all([
+    supabase.from("player_locations").select("user_id,lat,lng,updated_at").in("user_id", ids),
+    profilesByIds(ids),
+  ]);
   if (error) throw new Error(error.message);
-  return (data ?? []).map((f) => ({
-    id: f.id,
-    nickname: f.nickname,
-    lat: f.latitude!,
-    lng: f.longitude!,
-    updated_at: f.updated_at,
-  }));
+  const names = new Map(profs.map((p) => [p.id, p.nickname]));
+  return (spots ?? [])
+    .filter((s) => names.has(s.user_id))
+    .map((s) => ({
+      id: s.user_id,
+      nickname: names.get(s.user_id)!,
+      lat: s.lat,
+      lng: s.lng,
+      updated_at: s.updated_at,
+    }));
 }

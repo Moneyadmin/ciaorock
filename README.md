@@ -7,6 +7,24 @@ Caccia ai sassi dipinti: si dipinge un sasso, lo si nasconde e gli altri lo trov
 - **Mappa**: Leaflet con base vettoriale [OpenFreeMap](https://openfreemap.org) (gratuita, senza chiave) via MapLibre
 - **AI** (verifica foto, punteggio dei nascondigli): [OpenRouter](https://openrouter.ai)
 
+## Regole di gioco (controllate dal server)
+
+Il browser non scrive più direttamente ritrovamenti, nuovi sassi e spostamenti: passano dalle funzioni in
+`src/lib/game.functions.ts`, che controllano tutto e poi scrivono con la service role.
+
+| Azione | Controlli |
+| --- | --- |
+| Trovare un sasso | entro **75 m** dal sasso, non è un tuo sasso, foto-prova uguale alla foto del sasso (AI) |
+| Spostare un sasso | averlo trovato (o creato), essere entro 75 m dal sasso, nuovo nascondiglio entro **150 m** da te, foto (AI) |
+| Creare un sasso | foto di un sasso dipinto (AI), campi validi |
+
+Le soglie sono in `src/lib/rules.ts`. La migrazione `supabase/migrations/20261015090000_regole_lato_server.sql`
+blocca nel database le scritture dirette, protegge punti/ban/serie del profilo e sposta la posizione dal vivo
+in `player_locations`, leggibile **solo dagli amici**.
+
+> La posizione GPS la manda comunque il telefono: chi falsifica il GPS con app apposite può ancora barare
+> sulla distanza. Il controllo ferma però chi bara dal browser o chiamando il database direttamente.
+
 ## Provarla in locale
 
 Serve Node.js 22.
@@ -17,10 +35,6 @@ cp .env.example .env   # poi compila i valori (vedi sotto)
 npm run dev            # http://localhost:3000
 ```
 
-Per lavorare solo sulla grafica bastano le variabili `VITE_SUPABASE_*` e `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY`
-(sono chiavi pubbliche). Senza `OPENROUTER_API_KEY` la verifica AI delle foto risponde "servizio non disponibile";
-senza `SUPABASE_SERVICE_ROLE_KEY` i punti calcolati dall'AI non vengono salvati.
-
 Altri comandi:
 
 | Comando | Cosa fa |
@@ -30,12 +44,44 @@ Altri comandi:
 | `npm run typecheck` | controllo TypeScript |
 | `npm run lint` | ESLint + Prettier |
 
+### Un database di prova
+
+Le regole lato server richiedono la nuova migrazione, quindi per provare il gioco completo serve un progetto
+Supabase **di test** (il piano gratuito basta). **Non applicare la migrazione al database Lovable** finché
+l'app Lovable è online: la vecchia app smetterebbe di registrare ritrovamenti e sassi.
+
+1. Crea un progetto su supabase.com e applica le migrazioni come descritto sotto.
+2. *Authentication → Sign In / Providers → Email*: per i test disattiva **Confirm email**, così ti registri
+   senza aspettare la mail.
+3. Compila `.env` con URL e chiavi del progetto di test e con `OPENROUTER_API_KEY`.
+4. `npm run dev`, registra **due account** (non puoi trovare un tuo sasso): per esempio uno sul computer e
+   uno sul telefono.
+
+### Simulare la posizione dal computer
+
+In Chrome: DevTools (F12) → menu ⋮ → *More tools* → **Sensors** → *Location*, scegli *Other…* e inserisci
+latitudine/longitudine. Così puoi "camminare" fino a un sasso senza muoverti.
+
+### Provarla sul telefono
+
+GPS e fotocamera funzionano solo su HTTPS, quindi l'indirizzo di rete del computer (`http://192.168…`) non
+basta. Il modo più rapido è un tunnel gratuito:
+
+```sh
+npm run dev
+npx cloudflared tunnel --url http://localhost:3000   # in un secondo terminale
+```
+
+Apri sul telefono l'indirizzo `https://….trycloudflare.com` che compare. Il tunnel resta attivo finché il
+comando gira. In alternativa pubblica una versione di prova sulla VM OCI (sotto).
+
 ## Passare a un proprio progetto Supabase
 
 1. Crea un progetto su [supabase.com](https://supabase.com) (regione EU, es. Francoforte).
 2. Applica lo schema eseguendo **in quest'ordine** gli SQL nel *SQL Editor*:
-   1. `supabase/migrations/*.sql` (in ordine di nome/data)
+   1. `supabase/migrations/2026081…` → `20260912…` (le migrazioni di Lovable, in ordine di data)
    2. `drizzle/migrations/0000…0003_*.sql`
+   3. `supabase/migrations/20261015090000_regole_lato_server.sql` (regole lato server)
 
    La migrazione `20260908054004_…` assegna il ruolo admin a un ID utente del vecchio progetto: dopo la
    registrazione del vostro account admin, aggiornalo con

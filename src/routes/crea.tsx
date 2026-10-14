@@ -56,6 +56,7 @@ function CreatePage() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const [approved, setApproved] = useState(false);
+  const [token, setToken] = useState<string | undefined>(undefined);
   const [verdict, setVerdict] = useState<string | null>(null);
   const [position, setPosition] = useState(DEFAULT_POSITION);
   const [hasFix, setHasFix] = useState(false);
@@ -149,6 +150,7 @@ function CreatePage() {
     setPhoto(dataUrl);
     setApproved(false);
     setVerdict(null);
+    setToken(undefined);
     setError(null);
     if (!navigator.onLine) {
       setVerdict("Offline: la verifica AI verrà fatta al ritorno del segnale.");
@@ -159,6 +161,7 @@ function CreatePage() {
       const res = await checkPhoto({ data: { photo: dataUrl } });
       setApproved(res.approved);
       setVerdict(res.message);
+      setToken(res.token);
     } catch {
       setApproved(false);
       setVerdict("Verifica della foto non riuscita. Riprova.");
@@ -203,7 +206,7 @@ function CreatePage() {
         enqueue({ kind: "create", payload });
         setDone("Sasso salvato offline: verrà pubblicato al ritorno del segnale.");
       } else {
-        const id = await createRock(payload);
+        const id = await createRock({ ...payload, token });
         setDone("Sasso nascosto! L'AI sta valutando il nascondiglio…");
         try {
           const r = await score({ data: { rockId: id } });

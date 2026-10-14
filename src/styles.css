@@ -33,8 +33,10 @@
   --color-ink-foreground: var(--ink-foreground);
   --color-sky: var(--sky);
   --color-sun: var(--sun);
-  --shadow-pebble: 0 1px 2px oklch(0.25 0.08 285 / 0.06), 0 12px 32px -16px oklch(0.35 0.15 285 / 0.35);
-  --shadow-lift: 0 2px 4px oklch(0.25 0.08 285 / 0.08), 0 24px 48px -20px oklch(0.3 0.18 285 / 0.45);
+  --shadow-pebble:
+    0 1px 2px oklch(0.25 0.08 285 / 0.06), 0 12px 32px -16px oklch(0.35 0.15 285 / 0.35);
+  --shadow-lift:
+    0 2px 4px oklch(0.25 0.08 285 / 0.08), 0 24px 48px -20px oklch(0.3 0.18 285 / 0.45);
   --shadow-glow: 0 10px 30px -10px oklch(0.56 0.25 285 / 0.65);
 
   --radius-sm: calc(var(--radius) - 4px);

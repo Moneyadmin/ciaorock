@@ -32,7 +32,6 @@ import {
   type RockRow,
 } from "@/lib/api";
 import { adminMoveRock } from "@/lib/admin.functions";
-import { lookupPlace } from "@/lib/geo.functions";
 import { importLegacyRocks } from "@/lib/legacy";
 import { enqueue, readQueue } from "@/lib/offline";
 import {
@@ -46,7 +45,8 @@ import { flushQueue } from "@/lib/sync";
 import { saveMyLocation, fetchFriendLocations, type FriendLocation } from "@/lib/api";
 import { useSession } from "@/lib/useSession";
 import { avatarGradient, initialOf } from "@/lib/pins";
-import { matchRockPhoto, verifyRockPhoto } from "@/lib/vision.functions";
+import { matchRockPhoto } from "@/lib/vision.functions";
+import { FIND_RADIUS_M, HIDE_RADIUS_M } from "@/lib/rules";
 
 const MapView = lazy(() => import("@/components/MapView"));
 const LocationPicker = lazy(() => import("@/components/LocationPicker"));
@@ -212,7 +212,7 @@ function MapPage() {
       }
       if (rejected > 0) {
         setToast(
-          `${rejected} foto offline scartat${rejected === 1 ? "a" : "e"}: non mostrava un sasso dipinto ❌`,
+          `${rejected} azion${rejected === 1 ? "e" : "i"} offline rifiutat${rejected === 1 ? "a" : "e"} (foto non valida o troppo lontano dal sasso)`,
         );
       }
     };
@@ -356,6 +356,7 @@ function MapPage() {
             userId={userId}
             me={position}
             found={foundIds.includes(selected.id)}
+            mine={selected.creator_id === userId}
             onClose={() => setSelected(null)}
             onDone={(message) => {
               setToast(message);
@@ -387,6 +388,7 @@ function RockSheet({
   userId,
   me,
   found,
+  mine,
   onClose,
   onDone,
 }: {
@@ -394,6 +396,7 @@ function RockSheet({
   userId: string | null;
   me: { lat: number; lng: number };
   found: boolean;
+  mine: boolean;
   onClose: () => void;
   onDone: (message: string) => void;
 }) {
@@ -411,10 +414,12 @@ function RockSheet({
   const [checking, setChecking] = useState(false);
   const [approved, setApproved] = useState(false);
   const [verdict, setVerdict] = useState<string | null>(null);
+  const [token, setToken] = useState<string | undefined>(undefined);
   const fileRef = useRef<HTMLInputElement | null>(null);
-  const place = useServerFn(lookupPlace);
-  const checkPhoto = useServerFn(verifyRockPhoto);
   const comparePhoto = useServerFn(matchRockPhoto);
+  const distance = distanceMeters(me, rock);
+  const near = distance <= FIND_RADIUS_M;
+  const canMove = mine || found;
 
   useEffect(() => {
     let active = true;
@@ -440,6 +445,7 @@ function RockSheet({
     setError(null);
     setApproved(false);
     setVerdict(null);
+    setToken(undefined);
     const dataUrl = await compressImage(file);
     setProof(dataUrl);
     if (!navigator.onLine) {
@@ -448,11 +454,10 @@ function RockSheet({
     }
     setChecking(true);
     try {
-      const res = photo
-        ? await comparePhoto({ data: { photo: dataUrl, reference: photo } })
-        : await checkPhoto({ data: { photo: dataUrl } });
+      const res = await comparePhoto({ data: { rockId: rock.id, photo: dataUrl } });
       setApproved(res.approved);
       setVerdict(res.message);
+      setToken(res.token);
     } catch {
       setApproved(false);
       setVerdict("Verifica della foto non riuscita. Riprova.");
@@ -475,7 +480,16 @@ function RockSheet({
     return false;
   }
 
+  function tooFar() {
+    if (near) return false;
+    setError(
+      `Sei a ${formatDistance(distance)} dal sasso: avvicinati a meno di ${FIND_RADIUS_M} m e riprova.`,
+    );
+    return true;
+  }
+
   async function confirmFind() {
+    if (tooFar()) return;
     if (!proof) return setError("Serve la foto-prova del sasso che hai trovato.");
     if (proofBlocked()) return;
     setBusy(true);
@@ -489,19 +503,7 @@ function RockSheet({
         onDone("Ritrovamento salvato offline: lo invio appena torna il segnale 📴");
         return;
       }
-      const resolved = await place({ data: { lat: me.lat, lng: me.lng } }).catch(() => ({
-        city: null,
-        region: null,
-        country: null,
-        continent: null,
-      }));
-      await registerFind({
-        rockId: rock.id,
-        photo: proof,
-        lat: me.lat,
-        lng: me.lng,
-        place: resolved,
-      });
+      await registerFind({ rockId: rock.id, photo: proof, lat: me.lat, lng: me.lng, token });
       setRating(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registrazione non riuscita.");
@@ -511,6 +513,12 @@ function RockSheet({
   }
 
   async function confirmMove() {
+    if (tooFar()) return;
+    if (distanceMeters(me, target) > HIDE_RADIUS_M) {
+      return setError(
+        `Il nuovo nascondiglio deve essere vicino a dove ti trovi (entro ${HIDE_RADIUS_M} m).`,
+      );
+    }
     if (!proof) return setError("Carica la foto del sasso nel nuovo nascondiglio.");
     if (proofBlocked()) return;
     if (clue.trim().length < 10) return setError("Scrivi un nuovo indizio di almeno 10 caratteri.");
@@ -527,6 +535,8 @@ function RockSheet({
             photo: proof,
             lat: target.lat,
             lng: target.lng,
+            fromLat: me.lat,
+            fromLng: me.lng,
           },
         });
         onDone("Spostamento salvato offline: lo invio appena torna il segnale 📴");
@@ -538,8 +548,9 @@ function RockSheet({
         photo: proof,
         lat: target.lat,
         lng: target.lng,
-        userId,
-        moveCount: rock.move_count,
+        fromLat: me.lat,
+        fromLng: me.lng,
+        token,
       });
       onDone(`“${rock.name}” è stato nascosto in un nuovo posto 🪨`);
     } catch (err) {
@@ -553,7 +564,7 @@ function RockSheet({
     const finish = (msg: string) =>
       onDone(`Hai trovato “${rock.name}”! 🎉 +${rock.points} punti. ${msg}`);
     return (
-      <div className="absolute inset-0 z-[950] grid place-items-center bg-ink/50 p-5 backdrop-blur-sm">
+      <div className="absolute inset-0 z-[1050] grid place-items-center bg-ink/50 p-5 backdrop-blur-sm">
         <div className="pebble-card w-full max-w-sm space-y-4 rounded-[2rem] bg-card p-6 text-center animate-in zoom-in-95 fade-in">
           <span className="bg-brand mx-auto grid h-16 w-16 place-items-center rounded-3xl text-white shadow-glow">
             <Trophy className="h-8 w-8" strokeWidth={2.4} />
@@ -635,7 +646,7 @@ function RockSheet({
 
   return (
     <div
-      className="absolute inset-0 z-[950] flex items-end bg-ink/40 backdrop-blur-[2px] animate-in fade-in"
+      className="absolute inset-0 z-[1050] flex items-end bg-ink/40 backdrop-blur-[2px] animate-in fade-in"
       onClick={onClose}
     >
       <div
@@ -797,6 +808,7 @@ function RockSheet({
                   setError(null);
                   setApproved(false);
                   setVerdict(null);
+                  setToken(undefined);
                 }}
                 className="press flex-1 rounded-2xl bg-muted py-3.5 text-sm font-extrabold text-muted-foreground"
               >
@@ -820,16 +832,24 @@ function RockSheet({
 
         {mode === "view" && (
           <div className="mt-5 space-y-2">
+            {!found && !mine && !near && (
+              <p className="flex items-center gap-2 rounded-2xl bg-muted px-4 py-3 text-sm font-semibold text-muted-foreground">
+                <Navigation className="h-4 w-4 shrink-0 text-primary" />
+                Avvicinati a meno di {FIND_RADIUS_M} m per registrare il ritrovamento.
+              </p>
+            )}
             <button
               type="button"
               onClick={() => setMode("find")}
-              disabled={found}
-              className="press bg-brand flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-extrabold text-white shadow-glow disabled:bg-none disabled:bg-moss/15 disabled:text-[oklch(0.45_0.12_162)] disabled:shadow-none"
+              disabled={found || mine || !near}
+              className="press bg-brand flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-extrabold text-white shadow-glow disabled:bg-none disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none"
             >
               {found ? (
                 <>
                   <CheckCircle2 className="h-5 w-5" strokeWidth={2.6} /> Già trovato
                 </>
+              ) : mine ? (
+                "È un tuo sasso"
               ) : (
                 <>
                   <Camera className="h-5 w-5" strokeWidth={2.6} /> L'ho trovato! (con foto-prova)
@@ -839,9 +859,11 @@ function RockSheet({
             <button
               type="button"
               onClick={() => setMode("move")}
-              className="press flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary py-4 text-base font-extrabold text-secondary-foreground"
+              disabled={!canMove || !near}
+              className="press flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary py-4 text-base font-extrabold text-secondary-foreground disabled:opacity-50"
             >
-              <Repeat2 className="h-5 w-5" strokeWidth={2.6} /> Sposta / nascondi di nuovo
+              <Repeat2 className="h-5 w-5" strokeWidth={2.6} />
+              {canMove ? "Sposta / nascondi di nuovo" : "Trovalo prima di spostarlo"}
             </button>
           </div>
         )}

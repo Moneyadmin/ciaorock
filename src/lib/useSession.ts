@@ -2,27 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { ProfileRow } from "@/lib/api";
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-/** Keep the daily login streak fresh (used by the "SERIE" badges). */
+/** Keep the daily login streak fresh (used by the "SERIE" badges): computed by the database. */
 async function touchStreak(profile: ProfileRow & { last_login_date: string | null }) {
-  const today = todayISO();
-  if (profile.last_login_date === today) return profile;
-
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const current = profile.last_login_date === yesterday ? profile.streak_current + 1 : 1;
-  const best = Math.max(profile.streak_best, current);
-
-  const { data } = await supabase
-    .from("profiles")
-    .update({ last_login_date: today, streak_current: current, streak_best: best })
-    .eq("id", profile.id)
-    .select("id,nickname,bio,streak_current,streak_best,last_login_date")
-    .maybeSingle();
-
-  return (data as (ProfileRow & { last_login_date: string | null }) | null) ?? profile;
+  const { data, error } = await supabase.rpc("touch_streak");
+  const row = data?.[0];
+  if (error || !row) return profile;
+  return { ...profile, ...row };
 }
 
 export type SessionState = {

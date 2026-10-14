@@ -14,7 +14,16 @@ export type PendingCreate = {
 export type PendingMove = {
   kind: "move";
   id: string;
-  payload: { rockId: string; clue: string; photo: string; lat: number; lng: number };
+  payload: {
+    rockId: string;
+    clue: string;
+    photo: string;
+    lat: number;
+    lng: number;
+    /** dove si trovava il giocatore quando ha preso il sasso */
+    fromLat?: number;
+    fromLng?: number;
+  };
 };
 
 export type PendingFind = {

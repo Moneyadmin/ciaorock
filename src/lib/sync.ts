@@ -1,12 +1,13 @@
 import { scoreRock } from "@/lib/points.functions";
-import { createRock, fetchRockMoveCount, fetchRockPhoto, moveRock, registerFind } from "@/lib/api";
-import { lookupPlace } from "@/lib/geo.functions";
-import { matchRockPhoto, verifyRockPhoto } from "@/lib/vision.functions";
+import { claimFindFn, createRockFn, moveRockFn, type GameResult } from "@/lib/game.functions";
 import { dequeue, readQueue, type PendingAction } from "@/lib/offline";
 
 export type FlushResult = { synced: number; rejected: number };
 
-/** Push queued offline actions to the backend; photos are AI-checked first. */
+/**
+ * Invia al server le azioni salvate offline. Il server controlla foto (AI), distanza e
+ * permessi: se rifiuta un'azione la scartiamo, se c'è un errore di rete riproviamo dopo.
+ */
 export async function flushQueue(userId: string | null): Promise<FlushResult> {
   if (typeof window === "undefined" || !navigator.onLine || !userId) {
     return { synced: 0, rejected: 0 };
@@ -16,15 +17,10 @@ export async function flushQueue(userId: string | null): Promise<FlushResult> {
 
   for (const action of readQueue()) {
     try {
-      const check = await checkActionPhoto(action);
-      if (!check.approved) {
-        dequeue(action.id);
-        rejected += 1;
-        continue;
-      }
-      await runAction(action, userId);
+      const result = await runAction(action);
       dequeue(action.id);
-      synced += 1;
+      if (result.ok) synced += 1;
+      else rejected += 1;
     } catch {
       break; // keep the rest queued, retry later
     }
@@ -32,36 +28,21 @@ export async function flushQueue(userId: string | null): Promise<FlushResult> {
   return { synced, rejected };
 }
 
-/** Finds/moves are compared with the rock's original photo; creations are only checked for paint. */
-async function checkActionPhoto(action: PendingAction) {
-  if (action.kind !== "create") {
-    const reference = await fetchRockPhoto(action.payload.rockId).catch(() => null);
-    if (reference) {
-      return matchRockPhoto({ data: { photo: action.payload.photo, reference } });
-    }
-  }
-  return verifyRockPhoto({ data: { photo: action.payload.photo } });
-}
-
-async function runAction(action: PendingAction, userId: string) {
+async function runAction(action: PendingAction): Promise<GameResult> {
   if (action.kind === "create") {
-    const id = await createRock(action.payload);
-    await scoreRock({ data: { rockId: id } }).catch(() => undefined);
-    return;
+    const result = await createRockFn({ data: action.payload });
+    if (result.ok && result.id) {
+      await scoreRock({ data: { rockId: result.id } }).catch(() => undefined);
+    }
+    return result;
   }
   if (action.kind === "move") {
-    const moveCount = await fetchRockMoveCount(action.payload.rockId);
-    await moveRock({ ...action.payload, userId, moveCount });
-    return;
+    const { fromLat, fromLng, ...rest } = action.payload;
+    // Le code salvate da versioni precedenti non hanno la posizione di partenza.
+    if (fromLat == null || fromLng == null) {
+      return { ok: false, message: "Spostamento offline non più valido." };
+    }
+    return moveRockFn({ data: { ...rest, fromLat, fromLng } });
   }
-  const place = await lookupPlace({
-    data: { lat: action.payload.lat, lng: action.payload.lng },
-  }).catch(() => ({ city: null, region: null, country: null, continent: null }));
-  await registerFind({
-    rockId: action.payload.rockId,
-    photo: action.payload.photo,
-    lat: action.payload.lat,
-    lng: action.payload.lng,
-    place,
-  });
+  return claimFindFn({ data: action.payload });
 }

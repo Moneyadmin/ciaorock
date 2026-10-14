@@ -199,6 +199,27 @@ export type Database = {
           },
         ];
       };
+      player_locations: {
+        Row: {
+          lat: number;
+          lng: number;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          lat: number;
+          lng: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Update: {
+          lat?: number;
+          lng?: number;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       profiles: {
         Row: {
           banned: boolean;
@@ -396,7 +417,12 @@ export type Database = {
         };
         Returns: boolean;
       };
+      are_friends: { Args: { _a: string; _b: string }; Returns: boolean };
       tier_from_avg: { Args: { _avg: number }; Returns: string };
+      touch_streak: {
+        Args: never;
+        Returns: { last_login_date: string | null; streak_best: number; streak_current: number }[];
+      };
       tier_points: { Args: { _tier: string }; Returns: number };
     };
     Enums: {
