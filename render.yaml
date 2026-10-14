@@ -1,0 +1,32 @@
+# Render Blueprint: su render.com → New → Blueprint → scegli questo repository.
+# Al primo avvio Render chiede i valori delle variabili con "sync: false" (vedi .env.example).
+services:
+  - type: web
+    name: ciaorock
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /auth
+    autoDeploy: true
+    envVars:
+      # Pubbliche (finiscono nel codice del browser, servono anche in fase di build)
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: VITE_SUPABASE_PROJECT_ID
+        sync: false
+      # Server
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_PUBLISHABLE_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: PUBLIC_SITE_URL
+        sync: false
+      - key: PHOTO_TOKEN_SECRET
+        generateValue: true

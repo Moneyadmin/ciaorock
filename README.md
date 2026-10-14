@@ -98,6 +98,26 @@ comando gira. In alternativa pubblica una versione di prova sulla VM OCI (sotto)
 > Le migrazioni nel repository sono quelle generate da Lovable. Prima di spegnere il vecchio progetto conviene
 > confrontarle con lo schema reale (es. con un `pg_dump --schema-only`) per essere sicuri che non manchi nulla.
 
+## Pubblicare su Render (gratis, con il proprio dominio)
+
+Il modo più semplice. Il piano gratuito si addormenta dopo ~15 minuti senza visite: la prima apertura
+successiva impiega 30-60 secondi (per non farlo dormire serve il piano a pagamento più piccolo).
+
+1. Su [render.com](https://render.com) accedi con GitHub e scegli **New → Blueprint**, poi questo repository:
+   Render legge `render.yaml`.
+2. Inserisci i valori richiesti (gli stessi del `.env`, vedi `.env.example`). `PHOTO_TOKEN_SECRET` viene
+   generato da solo. In `PUBLIC_SITE_URL` metti l'indirizzo definitivo, es. `https://ciaorock.tuodominio.it`.
+3. Dopo il primo deploy l'app risponde su `https://ciaorock-xxxx.onrender.com`.
+4. **Dominio tuo**: nel servizio → *Settings → Custom Domains → Add* e scrivi il dominio. Poi, dal pannello
+   DNS del registrar:
+   - sottodominio (es. `ciaorock.tuodominio.it`): record **CNAME** verso `ciaorock-xxxx.onrender.com`;
+   - dominio principale (es. `tuodominio.it`): il record **A** (o ALIAS/ANAME) che Render indica.
+
+   Render verifica il dominio ed emette da solo il certificato HTTPS (di solito in pochi minuti).
+5. In Supabase → *Authentication → URL Configuration* imposta **Site URL** sul tuo dominio.
+
+Ogni push su `main` ripubblica l'app automaticamente.
+
 ## Pubblicare su OCI (VM + Docker)
 
 1. **VM**: Compute → Create instance, immagine *Ubuntu 24.04*, shape *VM.Standard.A1.Flex* (Ampere, rientra
