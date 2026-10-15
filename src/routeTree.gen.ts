@@ -17,6 +17,8 @@ import { Route as ClassificaRouteImport } from './routes/classifica'
 import { Route as CollezioneRouteImport } from './routes/collezione'
 import { Route as CreaRouteImport } from './routes/crea'
 import { Route as MessaggiRouteImport } from './routes/messaggi'
+import { Route as NuovaPasswordRouteImport } from './routes/nuova-password'
+import { Route as SetupRouteImport } from './routes/setup'
 import { Route as ChatIdRouteImport } from './routes/chat.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -59,6 +61,16 @@ const MessaggiRoute = MessaggiRouteImport.update({
   path: '/messaggi',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NuovaPasswordRoute = NuovaPasswordRouteImport.update({
+  id: '/nuova-password',
+  path: '/nuova-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SetupRoute = SetupRouteImport.update({
+  id: '/setup',
+  path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatIdRoute = ChatIdRouteImport.update({
   id: '/chat/$id',
   path: '/chat/$id',
@@ -74,6 +86,8 @@ export interface FileRoutesByFullPath {
   '/collezione': typeof CollezioneRoute
   '/crea': typeof CreaRoute
   '/messaggi': typeof MessaggiRoute
+  '/nuova-password': typeof NuovaPasswordRoute
+  '/setup': typeof SetupRoute
   '/chat/$id': typeof ChatIdRoute
 }
 export interface FileRoutesByTo {
@@ -85,6 +99,8 @@ export interface FileRoutesByTo {
   '/collezione': typeof CollezioneRoute
   '/crea': typeof CreaRoute
   '/messaggi': typeof MessaggiRoute
+  '/nuova-password': typeof NuovaPasswordRoute
+  '/setup': typeof SetupRoute
   '/chat/$id': typeof ChatIdRoute
 }
 export interface FileRoutesById {
@@ -97,6 +113,8 @@ export interface FileRoutesById {
   '/collezione': typeof CollezioneRoute
   '/crea': typeof CreaRoute
   '/messaggi': typeof MessaggiRoute
+  '/nuova-password': typeof NuovaPasswordRoute
+  '/setup': typeof SetupRoute
   '/chat/$id': typeof ChatIdRoute
 }
 export interface FileRouteTypes {
@@ -110,6 +128,8 @@ export interface FileRouteTypes {
     | '/collezione'
     | '/crea'
     | '/messaggi'
+    | '/nuova-password'
+    | '/setup'
     | '/chat/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -121,6 +141,8 @@ export interface FileRouteTypes {
     | '/collezione'
     | '/crea'
     | '/messaggi'
+    | '/nuova-password'
+    | '/setup'
     | '/chat/$id'
   id:
     | '__root__'
@@ -132,6 +154,8 @@ export interface FileRouteTypes {
     | '/collezione'
     | '/crea'
     | '/messaggi'
+    | '/nuova-password'
+    | '/setup'
     | '/chat/$id'
   fileRoutesById: FileRoutesById
 }
@@ -144,6 +168,8 @@ export interface RootRouteChildren {
   CollezioneRoute: typeof CollezioneRoute
   CreaRoute: typeof CreaRoute
   MessaggiRoute: typeof MessaggiRoute
+  NuovaPasswordRoute: typeof NuovaPasswordRoute
+  SetupRoute: typeof SetupRoute
   ChatIdRoute: typeof ChatIdRoute
 }
 
@@ -205,6 +231,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessaggiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/nuova-password': {
+      id: '/nuova-password'
+      path: '/nuova-password'
+      fullPath: '/nuova-password'
+      preLoaderRoute: typeof NuovaPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/setup': {
+      id: '/setup'
+      path: '/setup'
+      fullPath: '/setup'
+      preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chat/$id': {
       id: '/chat/$id'
       path: '/chat/$id'
@@ -224,6 +264,8 @@ const rootRouteChildren: RootRouteChildren = {
   CollezioneRoute: CollezioneRoute,
   CreaRoute: CreaRoute,
   MessaggiRoute: MessaggiRoute,
+  NuovaPasswordRoute: NuovaPasswordRoute,
+  SetupRoute: SetupRoute,
   ChatIdRoute: ChatIdRoute,
 }
 export const routeTree = rootRouteImport

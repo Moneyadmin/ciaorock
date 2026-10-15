@@ -99,6 +99,43 @@ comando gira. In alternativa pubblica una versione di prova sulla VM OCI (sotto)
 > Le migrazioni nel repository sono quelle generate da Lovable. Prima di spegnere il vecchio progetto conviene
 > confrontarle con lo schema reale (es. con un `pg_dump --schema-only`) per essere sicuri che non manchi nulla.
 
+## Email (obbligatorio per il recupero password)
+
+Il servizio email incluso in Supabase manda messaggi **solo ai membri del team del progetto** e pochi
+all'ora: per "Password dimenticata?" e per l'annuncio ai vecchi giocatori serve un SMTP vostro.
+
+1. Crea un account su un servizio email transazionale (es. **Resend** o **Brevo**, hanno piani gratuiti) e
+   verifica il dominio `ciaorock.com`: il servizio indica dei record DNS da aggiungere su Cloudflare.
+2. Supabase → *Authentication → Emails → SMTP Settings*: attiva **Custom SMTP** con host, porta, utente e
+   password del servizio. Mittente: es. `Ciao Rock <ciao@ciaorock.com>`.
+3. Supabase → *Authentication → Emails → Templates → Reset password*: oggetto
+   `Ciao Rock: scegli la tua password` e come corpo il contenuto di
+   `supabase/email-templates/reset-password.html`. Ai giocatori importati mostra l'annuncio della nuova
+   Ciao Rock, a tutti gli altri il normale messaggio di recupero.
+4. Supabase → *Authentication → Rate Limits*: alza **emails sent per hour** quanto consente il piano del
+   servizio email (per l'invio iniziale a tutti i giocatori).
+
+## Importare i dati della vecchia app (primo avvio)
+
+La pagina **`/setup`** (es. `https://ciaorock.com/setup`) legge i dati dalla vecchia app Lovable e li copia
+nel nuovo database, poi manda a ogni giocatore l'email per scegliere la nuova password.
+
+1. Imposta nel Worker il segreto **`SETUP_SECRET`** (una stringa casuale lunga): senza, la pagina è disattivata.
+2. Apri `/setup` e inserisci il codice.
+3. Inserisci URL e chiave pubblicabile della vecchia app (dal vecchio `.env`) e accedi con il tuo account del
+   vecchio gioco: la pagina legge profili, sassi, ritrovamenti, voti, giornate speciali, avvisi e ruoli.
+   Scarica anche la copia di backup in JSON. Amicizie e messaggi non sono leggibili (ognuno vede solo i suoi).
+4. Carica l'elenco email: un file `.txt` con **una email per riga**. Se accanto all'email c'è l'ID utente della
+   vecchia app (`mario@x.it,1b2c3d4e-…`), l'account viene ricreato con lo stesso ID e ritrova profilo, sassi,
+   punti e badge; senza ID il giocatore riparte con un profilo nuovo.
+5. **Importa**: crea gli account (con email confermata, senza password) e copia le tabelle mantenendo ID,
+   date e punti assegnati. Si può ripetere senza creare doppioni.
+6. **Invia le email**: parte l'email di recupero password con l'annuncio. Le email già inviate non vengono
+   ripetute; se Supabase segnala il limite orario la pagina aspetta e riprende.
+7. A fine migrazione **cancella `SETUP_SECRET`** dal Worker.
+
+Chi apre il link sceglie la nuova password su `/nuova-password` ed entra direttamente nel gioco.
+
 ## Pubblicare su Cloudflare Workers (consigliato)
 
 L'app gira come Worker (`wrangler.jsonc`), con deploy automatico da GitHub tramite *Workers Builds*.
@@ -128,6 +165,7 @@ Worker `ciaorock` → **Settings → Variables and Secrets**:
 | --- | --- |
 | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` | Text |
 | `SUPABASE_SERVICE_ROLE_KEY`, `OPENROUTER_API_KEY`, `PHOTO_TOKEN_SECRET` | Secret |
+| `SETUP_SECRET` (solo durante l'importazione, vedi sopra) | Secret |
 
 `PUBLIC_SITE_URL` è già in `wrangler.jsonc`. `PHOTO_TOKEN_SECRET`: una stringa casuale lunga (es.
 `openssl rand -base64 48`). Le stesse operazioni da terminale: `npx wrangler secret put SUPABASE_SERVICE_ROLE_KEY`

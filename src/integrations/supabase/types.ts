@@ -417,6 +417,7 @@ export type Database = {
         };
         Returns: boolean;
       };
+      admin_import: { Args: { _table: string; _rows: Json }; Returns: number };
       are_friends: { Args: { _a: string; _b: string }; Returns: boolean };
       tier_from_avg: { Args: { _avg: number }; Returns: string };
       touch_streak: {

@@ -35,6 +35,7 @@ function AuthPage() {
   const [nickname, setNickname] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && userId && profile?.nickname) navigate({ to: "/" });
@@ -58,7 +59,7 @@ function AuthPage() {
         if (err) {
           setError(
             err.message.toLowerCase().includes("invalid")
-              ? "Email o password non corretti. Se non hai un account tocca “Registrati”."
+              ? "Email o password non corretti. Giocavi alla vecchia Ciao Rock? Tocca “Password dimenticata?” per sceglierne una nuova."
               : err.message,
           );
           return;
@@ -80,6 +81,33 @@ function AuthPage() {
         }
       }
       await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function forgotPassword() {
+    setError(null);
+    setInfo(null);
+    const mail = email.trim().toLowerCase();
+    if (!mail)
+      return setError("Scrivi la tua email qui sopra, poi tocca di nuovo “Password dimenticata?”.");
+    setBusy(true);
+    try {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(mail, {
+        redirectTo: `${window.location.origin}/nuova-password`,
+      });
+      if (err) {
+        setError(
+          /rate limit|seconds/i.test(err.message)
+            ? "Hai già chiesto un'email da poco: aspetta un minuto e riprova."
+            : err.message,
+        );
+        return;
+      }
+      setInfo(
+        `Se ${mail} è registrata, ti abbiamo mandato un'email con il link per scegliere una nuova password. Controlla anche lo spam.`,
+      );
     } finally {
       setBusy(false);
     }
@@ -182,9 +210,24 @@ function AuthPage() {
               {error}
             </p>
           )}
+          {info && (
+            <p className="rounded-xl bg-moss/15 px-3 py-2 text-sm font-semibold text-foreground">
+              {info}
+            </p>
+          )}
           <PrimaryButton disabled={busy}>
             {mode === "login" ? "Accedi" : "Crea account"}
           </PrimaryButton>
+          {mode === "login" && (
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => void forgotPassword()}
+              className="press w-full text-center text-sm font-extrabold text-primary"
+            >
+              Password dimenticata?
+            </button>
+          )}
         </form>
       )}
     </div>
