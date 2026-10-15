@@ -58,15 +58,17 @@ function AuthPage() {
         });
         if (err) {
           setError(
-            err.message.toLowerCase().includes("invalid")
-              ? "Email o password non corretti. Giocavi alla vecchia Ciao Rock? Tocca “Password dimenticata?” per sceglierne una nuova."
-              : err.message,
+            /not confirmed/i.test(err.message)
+              ? "Devi ancora confermare l'email: apri il link che ti abbiamo mandato (controlla anche lo spam)."
+              : err.message.toLowerCase().includes("invalid")
+                ? "Email o password non corretti. Giocavi alla vecchia Ciao Rock? Tocca “Password dimenticata?” per sceglierne una nuova."
+                : err.message,
           );
           return;
         }
       } else {
         if (pass.length < 6) return setError("La password deve avere almeno 6 caratteri.");
-        const { error: err } = await supabase.auth.signUp({
+        const { data, error: err } = await supabase.auth.signUp({
           email: mail,
           password: pass,
           options: { emailRedirectTo: window.location.origin },
@@ -77,6 +79,14 @@ function AuthPage() {
               ? "Esiste già un account con questa email: tocca “Accedi”."
               : err.message,
           );
+          return;
+        }
+        // Con la conferma email attiva non c'è ancora una sessione: va confermato il link.
+        if (!data.session) {
+          setInfo(
+            `Ti abbiamo mandato un'email a ${mail}: apri il link per confermare l'account, poi torna qui e accedi. Controlla anche lo spam.`,
+          );
+          setMode("login");
           return;
         }
       }
