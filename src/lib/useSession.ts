@@ -70,6 +70,19 @@ export function useSession(): SessionState {
         streak_best: fresh.streak_best,
       });
     } else {
+      // Nessun profilo: se l'account non esiste più sul server (es. cancellato o unito a un
+      // altro durante la migrazione) la sessione salvata è inutile, quindi usciamo.
+      const { error } = await supabase.auth.getUser();
+      if (
+        error &&
+        (error.status === 401 ||
+          error.status === 403 ||
+          /not.*exist|not found/i.test(error.message))
+      ) {
+        await supabase.auth.signOut({ scope: "local" });
+        setUserId(null);
+        setEmail(null);
+      }
       setProfile(null);
       setBanned(false);
     }

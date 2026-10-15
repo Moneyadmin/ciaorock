@@ -27,7 +27,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { loading, userId, profile, refresh } = useSession();
+  const { loading, userId, email: sessionEmail, profile, refresh, signOut } = useSession();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
@@ -182,6 +182,14 @@ function AuthPage() {
             </p>
           )}
           <PrimaryButton disabled={busy}>Entra in RockDex</PrimaryButton>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void signOut()}
+            className="press w-full text-center text-sm font-extrabold text-muted-foreground"
+          >
+            {sessionEmail ? `Non sei ${sessionEmail}? ` : ""}Esci e accedi con un altro account
+          </button>
         </form>
       ) : (
         <form onSubmit={submit} className="glass relative space-y-4 rounded-[2rem] p-5">
