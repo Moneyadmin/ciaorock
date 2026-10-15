@@ -3,11 +3,13 @@ import {
   Outlet,
   Link,
   createRootRouteWithContext,
+  useNavigate,
   useRouter,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
 
@@ -133,6 +135,19 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const navigate = useNavigate();
+
+  // Un link di "password dimenticata" può arrivare su qualunque pagina (es. se l'indirizzo
+  // di ritorno non è autorizzato in Supabase): appena Supabase ha letto il link dall'indirizzo
+  // (evento PASSWORD_RECOVERY) portiamo alla scelta della nuova password.
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY" && window.location.pathname !== "/nuova-password") {
+        void navigate({ to: "/nuova-password" });
+      }
+    });
+    return () => data.subscription.unsubscribe();
+  }, [navigate]);
 
   return (
     <QueryClientProvider client={queryClient}>
