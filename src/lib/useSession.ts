@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { ProfileRow } from "@/lib/api";
 import { announceRewards } from "@/lib/rewards";
+import { TERMS_VERSION } from "@/lib/legal";
 
 /** Keep the daily login streak fresh (used by the "SERIE" badges): computed by the database. */
 async function touchStreak(profile: ProfileRow & { last_login_date: string | null }) {
@@ -26,6 +27,8 @@ export type SessionState = {
   profile: ProfileRow | null;
   banned: boolean;
   admin: boolean;
+  /** ha confermato l'età minima e accettato la versione attuale di termini e informativa */
+  consented: boolean;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -37,6 +40,7 @@ export function useSession(): SessionState {
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [banned, setBanned] = useState(false);
   const [admin, setAdmin] = useState(false);
+  const [consented, setConsented] = useState(true);
 
   const load = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
@@ -52,7 +56,7 @@ export function useSession(): SessionState {
       return;
     }
 
-    const [{ data: row }, { data: roleRow }] = await Promise.all([
+    const [{ data: row }, { data: roleRow }, consentRes] = await Promise.all([
       supabase
         .from("profiles")
         .select(
@@ -66,7 +70,11 @@ export function useSession(): SessionState {
         .eq("user_id", user.id)
         .eq("role", "admin")
         .maybeSingle(),
+      supabase.from("consents").select("terms_version").eq("user_id", user.id).maybeSingle(),
     ]);
+
+    // se la tabella non esiste ancora (database non aggiornato) non blocchiamo nessuno
+    setConsented(Boolean(consentRes.error) || consentRes.data?.terms_version === TERMS_VERSION);
 
     setAdmin(Boolean(roleRow));
 
@@ -121,5 +129,5 @@ export function useSession(): SessionState {
     setBanned(false);
   }, []);
 
-  return { loading, userId, email, profile, banned, admin, refresh: load, signOut };
+  return { loading, userId, email, profile, banned, admin, consented, refresh: load, signOut };
 }

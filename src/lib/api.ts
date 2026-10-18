@@ -115,13 +115,20 @@ export async function fetchMyFinds(userId: string) {
     .eq("user_id", userId)
     .order("found_at", { ascending: false });
   if (error) throw new Error(error.message);
-  return (data ?? []) as unknown as Array<
+  const finds = (data ?? []) as unknown as Array<
     FindRecord & {
       id: string;
       photo: string;
       rock: { id: string; name: string; clue: string; photo: string; creator_id: string } | null;
     }
   >;
+  // Le foto-prova stanno in find_photos, leggibili solo da chi le ha scattate (e dagli admin).
+  const { data: photos } = await supabase
+    .from("find_photos")
+    .select("find_id,photo")
+    .eq("user_id", userId);
+  const byFind = new Map((photos ?? []).map((p) => [p.find_id, p.photo]));
+  return finds.map((f) => ({ ...f, photo: byFind.get(f.id) || f.photo }));
 }
 
 export async function fetchFindsFor(userId: string): Promise<FindRecord[]> {
@@ -351,7 +358,13 @@ export async function sendMessage(recipientId: string, body: string) {
   const { error } = await supabase
     .from("messages")
     .insert({ recipient_id: recipientId, body: body.trim() });
-  if (error) throw new Error(error.message);
+  if (error) {
+    // il database accetta messaggi solo tra amici (e mai da account bloccati)
+    if (error.code === "42501" || /row-level security/i.test(error.message)) {
+      throw new Error("Puoi scrivere solo ai tuoi amici.");
+    }
+    throw new Error(error.message);
+  }
 }
 
 export async function deleteMessage(id: string) {
@@ -426,25 +439,7 @@ export async function rateRock(rockId: string, userId: string, stars: number) {
 // Profilo, negozio e missioni co-op
 // ---------------------------------------------------------------------------
 
-/** Toglie tag HTML e caratteri di controllo; massimo 500 caratteri (lo rifà anche il database). */
-export function sanitizeBio(text: string) {
-  return (
-    text
-      .replace(/<[^>]*>/g, "")
-      // eslint-disable-next-line no-control-regex -- togliere i caratteri di controllo è proprio lo scopo
-      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
-      .slice(0, 500)
-      .trim()
-  );
-}
-
-export async function updateBio(userId: string, bio: string) {
-  const { error } = await supabase
-    .from("profiles")
-    .update({ bio: sanitizeBio(bio) })
-    .eq("id", userId);
-  if (error) throw new Error(error.message);
-}
+export { sanitizeBio } from "@/lib/rules";
 
 export type Wallet = { earned: number; spent: number; balance: number };
 

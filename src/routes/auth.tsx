@@ -1,9 +1,12 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/useSession";
 import { KeyRound, Loader2, Mail } from "lucide-react";
 import { Logo } from "@/components/Logo";
+import { ConsentGate } from "@/components/ConsentGate";
+import { createProfile } from "@/lib/profile.functions";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -27,7 +30,16 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { loading, userId, email: sessionEmail, profile, refresh, signOut } = useSession();
+  const {
+    loading,
+    userId,
+    email: sessionEmail,
+    profile,
+    consented,
+    refresh,
+    signOut,
+  } = useSession();
+  const createProfileFn = useServerFn(createProfile);
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
@@ -200,17 +212,12 @@ function AuthPage() {
     if (!userId) return setError("Sessione scaduta: accedi di nuovo.");
     setBusy(true);
     try {
-      const { data: taken } = await supabase
-        .from("profiles")
-        .select("id")
-        .ilike("nickname", nick)
-        .maybeSingle();
-      if (taken) return setError("Nickname già in uso, scegline un altro.");
-
-      const { error: err } = await supabase.from("profiles").insert({ id: userId, nickname: nick });
-      if (err) return setError("Nickname già in uso o non valido, riprova.");
+      const res = await createProfileFn({ data: { nickname: nick } });
+      if (!res.ok) return setError(res.message);
       await refresh();
       navigate({ to: "/" });
+    } catch {
+      setError("Non sono riuscito a creare il profilo. Riprova.");
     } finally {
       setBusy(false);
     }
@@ -231,7 +238,9 @@ function AuthPage() {
         </p>
       </div>
 
-      {needsNickname ? (
+      {needsNickname && !consented ? (
+        <ConsentGate hasProfile={false} onDone={refresh} onSignOut={signOut} />
+      ) : needsNickname ? (
         <form onSubmit={saveNickname} className="glass relative space-y-4 rounded-[2rem] p-5">
           <div>
             <h2 className="text-2xl">Scegli il tuo nickname</h2>
@@ -420,6 +429,16 @@ function AuthPage() {
           )}
         </form>
       )}
+      <p className="relative mt-5 text-center text-xs text-muted-foreground">
+        Ciao Rock è per chi ha almeno 14 anni ·{" "}
+        <Link to="/privacy" className="font-bold underline">
+          Privacy
+        </Link>{" "}
+        ·{" "}
+        <Link to="/termini" className="font-bold underline">
+          Termini
+        </Link>
+      </p>
     </div>
   );
 }

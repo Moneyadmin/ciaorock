@@ -1,22 +1,14 @@
-// Server-only: the admin panel unlock sequence never reaches the browser bundle.
-const PASSWORD_ONE = "Ilcriceto771";
-const PASSWORD_TWO = "adminmodeactive";
-const SECRET_ANSWER = "no";
+import { createHash, timingSafeEqual } from "node:crypto";
 
-function norm(value: string) {
-  return value.trim().toLowerCase();
+/**
+ * Password del pannello admin: sta solo nei segreti del Worker (ADMIN_PANEL_PASSWORD), mai nel
+ * codice. È un secondo controllo: ogni funzione admin verifica comunque il ruolo nel database.
+ */
+export function checkAdminPassword(given: string): "ok" | "wrong" | "missing" {
+  const expected = process.env["ADMIN_PANEL_PASSWORD"];
+  if (!expected) return "missing";
+  // confronto a tempo costante su hash di uguale lunghezza
+  const a = createHash("sha256").update(given.trim()).digest();
+  const b = createHash("sha256").update(expected.trim()).digest();
+  return timingSafeEqual(a, b) ? "ok" : "wrong";
 }
-
-export function checkAdminSequence(input: {
-  passwordOne: string;
-  passwordTwo: string;
-  answer: string;
-}): boolean {
-  return (
-    input.passwordOne.trim() === PASSWORD_ONE &&
-    input.passwordTwo.trim() === PASSWORD_TWO &&
-    norm(input.answer) === SECRET_ANSWER
-  );
-}
-
-export const ADMIN_QUESTION = "lui ohp lui?";

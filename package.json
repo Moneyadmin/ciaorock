@@ -18,6 +18,8 @@
   },
   "dependencies": {
     "@ai-sdk/openai-compatible": "^3.0.30",
+    "@fontsource-variable/bricolage-grotesque": "^5.3.0",
+    "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
     "@hookform/resolvers": "^5.2.2",
     "@maplibre/maplibre-gl-leaflet": "^0.1.4",
     "@radix-ui/react-accordion": "^1.2.12",

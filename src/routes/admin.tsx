@@ -49,8 +49,6 @@ type Rock = { id: string; name: string; lat: number; lng: number; move_count: nu
 type Special = { id: string; day: string; multiplier: number };
 type Trashed = { id: string; name: string; lat: number; lng: number; deleted_at: string };
 
-const QUESTION = "lui ohp lui?";
-
 function AdminPage() {
   const { loading, userId, admin } = useSession();
   const navigate = useNavigate();
@@ -87,25 +85,19 @@ function AdminPage() {
 
 function UnlockForm({ onUnlocked }: { onUnlocked: () => void }) {
   const unlock = useServerFn(unlockAdminPanel);
-  const [step, setStep] = useState(1);
-  const [one, setOne] = useState("");
-  const [two, setTwo] = useState("");
-  const [answer, setAnswer] = useState("");
+  const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function submit() {
     setBusy(true);
     try {
-      const res = await unlock({ data: { passwordOne: one, passwordTwo: two, answer } });
+      const res = await unlock({ data: { password } });
       if (res.ok) {
         toast.success("Pannello sbloccato");
         onUnlocked();
       } else {
-        toast.error("Sequenza errata. Riprova da capo.");
-        setStep(1);
-        setOne("");
-        setTwo("");
-        setAnswer("");
+        toast.error("Password errata.");
+        setPassword("");
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Errore");
@@ -115,62 +107,32 @@ function UnlockForm({ onUnlocked }: { onUnlocked: () => void }) {
   }
 
   return (
-    <div className="pebble-card space-y-3 p-5">
-      <p className="text-sm text-muted-foreground">Passaggio {step} di 3</p>
-      {step === 1 && (
-        <>
-          <label className="block text-sm font-bold">Prima password</label>
-          <input
-            type="password"
-            value={one}
-            onChange={(e) => setOne(e.target.value)}
-            className="w-full rounded-2xl border border-input bg-card px-4 py-3 outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
-          />
-          <button
-            disabled={!one}
-            onClick={() => setStep(2)}
-            className="press w-full rounded-2xl bg-primary py-3.5 font-extrabold text-primary-foreground disabled:opacity-50"
-          >
-            Avanti
-          </button>
-        </>
-      )}
-      {step === 2 && (
-        <>
-          <label className="block text-sm font-bold">Seconda password</label>
-          <input
-            type="password"
-            value={two}
-            onChange={(e) => setTwo(e.target.value)}
-            className="w-full rounded-2xl border border-input bg-card px-4 py-3 outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
-          />
-          <button
-            disabled={!two}
-            onClick={() => setStep(3)}
-            className="press w-full rounded-2xl bg-primary py-3.5 font-extrabold text-primary-foreground disabled:opacity-50"
-          >
-            Avanti
-          </button>
-        </>
-      )}
-      {step === 3 && (
-        <>
-          <label className="block text-sm font-bold">{QUESTION}</label>
-          <input
-            value={answer}
-            onChange={(e) => setAnswer(e.target.value)}
-            className="w-full rounded-2xl border border-input bg-card px-4 py-3 outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
-          />
-          <button
-            disabled={!answer || busy}
-            onClick={submit}
-            className="press w-full rounded-2xl bg-primary py-3.5 font-extrabold text-primary-foreground disabled:opacity-50"
-          >
-            {busy ? "Verifico…" : "Sblocca"}
-          </button>
-        </>
-      )}
-    </div>
+    <form
+      className="pebble-card space-y-3 p-5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        void submit();
+      }}
+    >
+      <label htmlFor="admin-password" className="block text-sm font-bold">
+        Password del pannello
+      </label>
+      <input
+        id="admin-password"
+        type="password"
+        autoComplete="current-password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        className="w-full rounded-2xl border border-input bg-card px-4 py-3 outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
+      />
+      <button
+        type="submit"
+        disabled={!password || busy}
+        className="press w-full rounded-2xl bg-primary py-3.5 font-extrabold text-primary-foreground disabled:opacity-50"
+      >
+        {busy ? "Verifico…" : "Sblocca"}
+      </button>
+    </form>
   );
 }
 

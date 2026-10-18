@@ -75,3 +75,96 @@ export const removeAvatar = createServerFn({ method: "POST" })
         .catch(() => undefined);
     return { ok: true, url: null };
   });
+
+export type ProfileResult = { ok: true } | { ok: false; message: string };
+
+const Nickname = z
+  .string()
+  .trim()
+  .min(3, "Il nickname deve avere almeno 3 caratteri.")
+  .max(24, "Il nickname può avere al massimo 24 caratteri.")
+  .regex(/^[\p{L}\p{N}._\- ]+$/u, "Usa solo lettere, numeri, spazi, punti, trattini e _.");
+
+/**
+ * Crea il profilo con il nickname scelto: serve aver accettato termini e informativa (età
+ * minima 14 anni) e il nickname passa dal controllo AI. Il browser non può crearlo da solo.
+ */
+export const createProfile = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ nickname: z.string().max(100) }).parse(d))
+  .handler(async ({ data, context }): Promise<ProfileResult> => {
+    const parsed = Nickname.safeParse(data.nickname);
+    if (!parsed.success) return { ok: false, message: parsed.error.issues[0]!.message };
+    const nickname = parsed.data.replace(/\s+/g, " ");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: consent, error: consentError } = await supabaseAdmin
+      .from("consents")
+      .select("user_id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    // (consentError = database non ancora aggiornato con la tabella dei consensi)
+    if (!consent && !consentError) {
+      return { ok: false, message: "Prima conferma l'età e accetta i termini." };
+    }
+
+    const { data: taken } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .ilike("nickname", nickname.replace(/[%_\\]/g, "\\$&"))
+      .maybeSingle();
+    if (taken) return { ok: false, message: "Nickname già in uso, scegline un altro." };
+
+    const { checkText } = await import("./moderation.server");
+    const text = await checkText("nickname", nickname);
+    if (!text.ok) return text;
+
+    const { error } = await supabaseAdmin.from("profiles").insert({ id: context.userId, nickname });
+    if (error) {
+      if (error.code === "23505")
+        return { ok: false, message: "Nickname già in uso, scegline un altro." };
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+/** Salva la bio dopo il controllo AI (il browser non può più scriverla direttamente). */
+export const saveBio = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ bio: z.string().max(2000) }).parse(d))
+  .handler(async ({ data, context }): Promise<ProfileResult> => {
+    const { sanitizeBio } = await import("./rules");
+    const bio = sanitizeBio(data.bio);
+    if (bio) {
+      const { checkText } = await import("./moderation.server");
+      const text = await checkText("bio", bio);
+      if (!text.ok) return text;
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("profiles").update({ bio }).eq("id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+/**
+ * Cancella l'account e tutti i dati del giocatore (diritto alla cancellazione). Le foto profilo
+ * vengono rimosse dallo Storage; i sassi già trovati da altri restano in forma anonima.
+ */
+export const deleteAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ confirm: z.literal("ELIMINA") }).parse(d))
+  .handler(async ({ context }): Promise<ProfileResult> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const bucket = supabaseAdmin.storage.from(AVATAR_BUCKET);
+    const { data: files } = await bucket.list(context.userId);
+    if (files?.length) {
+      await bucket.remove(files.map((f) => `${context.userId}/${f.name}`)).catch(() => undefined);
+    }
+    const { error: prepError } = await supabaseAdmin.rpc("prepare_account_deletion", {
+      _uid: context.userId,
+    });
+    if (prepError) throw new Error(prepError.message);
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

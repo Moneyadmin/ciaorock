@@ -25,3 +25,15 @@ export function metersBetween(a: { lat: number; lng: number }, b: { lat: number;
 
 /** Admin: quanto tenere premuto un sasso sulla mappa prima che venga chiesto se spostarlo. */
 export const ADMIN_HOLD_MS = 8000;
+
+/** Toglie tag HTML e caratteri di controllo; massimo 500 caratteri (lo rifà anche il database). */
+export function sanitizeBio(text: string) {
+  return (
+    text
+      .replace(/<[^>]*>/g, "")
+      // eslint-disable-next-line no-control-regex -- togliere i caratteri di controllo è proprio lo scopo
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+      .slice(0, 500)
+      .trim()
+  );
+}

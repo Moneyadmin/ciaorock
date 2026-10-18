@@ -5,7 +5,7 @@ import { checkPainted, checkSameRock, type RockPhotoCheck } from "./vision.serve
 export async function loadRock(rockId: string) {
   const { data, error } = await supabaseAdmin
     .from("rocks")
-    .select("id,creator_id,lat,lng,photo,move_count,deleted_at")
+    .select("id,name,clue,creator_id,lat,lng,photo,move_count,deleted_at")
     .eq("id", rockId)
     .maybeSingle();
   if (error) throw new Error(error.message);

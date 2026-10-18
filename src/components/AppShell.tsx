@@ -3,6 +3,7 @@ import { Ban } from "lucide-react";
 import { BottomNav } from "./BottomNav";
 import { LiveAlerts } from "./LiveAlerts";
 import { useSession } from "@/lib/useSession";
+import { ConsentGate } from "./ConsentGate";
 
 export function AppShell({
   title,
@@ -18,7 +19,18 @@ export function AppShell({
   /** Pulsante o elemento mostrato a destra del titolo. */
   action?: ReactNode;
 }) {
-  const { banned } = useSession();
+  const { banned, userId, profile, consented, refresh, signOut } = useSession();
+
+  // Account esistenti: prima di continuare a giocare confermano età e accettano i documenti.
+  if (userId && profile && !consented) {
+    return (
+      <div className="app-frame bg-background">
+        <div className="mx-auto grid min-h-[100dvh] max-w-md place-items-center px-5 py-10">
+          <ConsentGate hasProfile onDone={refresh} onSignOut={signOut} />
+        </div>
+      </div>
+    );
+  }
 
   if (banned) {
     return (

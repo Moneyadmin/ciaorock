@@ -63,6 +63,9 @@ export const createRockFn = createServerFn({ method: "POST" })
         };
       }
     }
+    const { checkText } = await import("./moderation.server");
+    const text = await checkText("rock", `Nome: ${data.name}\nIndizio: ${data.clue}`);
+    if (!text.ok) return { ok: false, message: text.message };
     const { checkPhotoToken } = await import("./photo-token.server");
     if (!checkPhotoToken(data.token, "paint", context.userId, null, data.photo)) {
       const { checkPainted } = await import("./vision.server");
@@ -177,6 +180,11 @@ export const moveRockFn = createServerFn({ method: "POST" })
         ok: false,
         message: `Il nuovo nascondiglio è a ${far(hide)} da te: mettilo dove ti trovi (entro ${HIDE_RADIUS_M} m).`,
       };
+    }
+    if (data.clue !== rock.clue) {
+      const { checkText } = await import("./moderation.server");
+      const text = await checkText("rock", `Nome: ${rock.name}\nIndizio: ${data.clue}`);
+      if (!text.ok) return { ok: false, message: text.message };
     }
     const { checkPhotoToken } = await import("./photo-token.server");
     if (!checkPhotoToken(data.token, "match", context.userId, rock.id, data.photo)) {

@@ -14,12 +14,15 @@ async function assertAdmin(context: Ctx) {
 /** Verifies the 3-step unlock sequence (server-side) for an admin account. */
 export const unlockAdminPanel = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { passwordOne: string; passwordTwo: string; answer: string }) => data)
+  .inputValidator((data: { password: string }) => ({ password: String(data.password ?? "") }))
   .handler(async ({ data, context }) => {
     await assertAdmin(context as Ctx);
-    const { checkAdminSequence } = await import("@/lib/admin.server");
-    if (!checkAdminSequence(data)) return { ok: false as const };
-    return { ok: true as const };
+    const { checkAdminPassword } = await import("@/lib/admin.server");
+    const result = checkAdminPassword(data.password);
+    if (result === "missing") {
+      throw new Error("Pannello disattivato: imposta il segreto ADMIN_PANEL_PASSWORD nel Worker.");
+    }
+    return { ok: result === "ok" };
   });
 
 export const adminListPlayers = createServerFn({ method: "POST" })

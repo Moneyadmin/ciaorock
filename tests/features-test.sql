@@ -80,11 +80,11 @@ do $$ begin
   raise exception 'FAIL punti diretti permessi';
 exception when insufficient_privilege then raise notice 'OK   registro punti scrivibile solo dal database'; end $$;
 reset role;
-select pg_temp.check((select plate_id = 'esploratore' and avatar_url is null and bio = 'Ciao sono anna'
-  from public.profiles where nickname = 'anna'), 'profilo: targhetta e foto protette, bio ripulita');
+select pg_temp.check((select plate_id = 'esploratore' and avatar_url is null and bio = ''
+  from public.profiles where nickname = 'anna'), 'profilo: targhetta, foto e bio protette (la bio passa dal server)');
 select pg_temp.check((select plate_label = 'Esploratore' from public.leaderboard() where nickname = 'anna'), 'targhetta visibile in classifica');
-set role authenticated; select pg_temp.as_user('aaaaaaaa-0000-4000-8000-000000000001');
-update public.profiles set bio = repeat('x', 600) where id = auth.uid();
+set role service_role; select pg_temp.as_service();
+update public.profiles set bio = repeat('x', 600) where nickname = 'anna';
 reset role;
 select pg_temp.check((select char_length(bio) = 500 from public.profiles where nickname = 'anna'), 'bio tagliata a 500 caratteri');
 

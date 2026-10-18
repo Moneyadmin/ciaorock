@@ -11,3 +11,5 @@
   profilo protetto e missioni co-op (inviti, timer, raddoppio, scadenza).
 - `premi-test.sql`: badge e targhette creati dall'admin (solo l'admin li crea, periodo di disponibilità,
   acquisto o sblocco automatico a condizione, avviso una volta sola, premi posseduti non cancellabili).
+- `minori-test.sql`: età minima e consenso, chat solo tra amici (e mai da account bannati), foto-prova
+  visibili solo a chi le scatta e agli admin, cancellazione dell'account.

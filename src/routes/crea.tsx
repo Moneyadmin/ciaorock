@@ -12,6 +12,7 @@ import {
   PartyPopper,
   ScanSearch,
   WifiOff,
+  ShieldAlert,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { createRock } from "@/lib/api";
@@ -437,6 +438,15 @@ function CreatePage() {
               {position.lat.toFixed(6)}, {position.lng.toFixed(6)}
             </p>
           </div>
+        </div>
+
+        <div className="flex gap-3 rounded-2xl bg-sun/25 px-4 py-3 text-xs leading-snug">
+          <ShieldAlert className="h-5 w-5 shrink-0 text-ink" />
+          <p>
+            <strong>Per la tua sicurezza:</strong> chi trova il sasso vede la posizione esatta e il
+            tuo nickname. Non nasconderlo vicino a casa tua o alla tua scuola, scegli solo luoghi
+            pubblici e sicuri e non scrivere nell'indizio dati personali (nomi, indirizzi, scuole).
+          </p>
         </div>
 
         {error && (

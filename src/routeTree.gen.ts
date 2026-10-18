@@ -19,8 +19,10 @@ import { Route as CreaRouteImport } from './routes/crea'
 import { Route as MessaggiRouteImport } from './routes/messaggi'
 import { Route as NegozioRouteImport } from './routes/negozio'
 import { Route as NuovaPasswordRouteImport } from './routes/nuova-password'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ProfiloRouteImport } from './routes/profilo'
 import { Route as SetupRouteImport } from './routes/setup'
+import { Route as TerminiRouteImport } from './routes/termini'
 import { Route as ChatIdRouteImport } from './routes/chat.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -73,6 +75,11 @@ const NuovaPasswordRoute = NuovaPasswordRouteImport.update({
   path: '/nuova-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfiloRoute = ProfiloRouteImport.update({
   id: '/profilo',
   path: '/profilo',
@@ -81,6 +88,11 @@ const ProfiloRoute = ProfiloRouteImport.update({
 const SetupRoute = SetupRouteImport.update({
   id: '/setup',
   path: '/setup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TerminiRoute = TerminiRouteImport.update({
+  id: '/termini',
+  path: '/termini',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatIdRoute = ChatIdRouteImport.update({
@@ -100,8 +112,10 @@ export interface FileRoutesByFullPath {
   '/messaggi': typeof MessaggiRoute
   '/negozio': typeof NegozioRoute
   '/nuova-password': typeof NuovaPasswordRoute
+  '/privacy': typeof PrivacyRoute
   '/profilo': typeof ProfiloRoute
   '/setup': typeof SetupRoute
+  '/termini': typeof TerminiRoute
   '/chat/$id': typeof ChatIdRoute
 }
 export interface FileRoutesByTo {
@@ -115,8 +129,10 @@ export interface FileRoutesByTo {
   '/messaggi': typeof MessaggiRoute
   '/negozio': typeof NegozioRoute
   '/nuova-password': typeof NuovaPasswordRoute
+  '/privacy': typeof PrivacyRoute
   '/profilo': typeof ProfiloRoute
   '/setup': typeof SetupRoute
+  '/termini': typeof TerminiRoute
   '/chat/$id': typeof ChatIdRoute
 }
 export interface FileRoutesById {
@@ -131,8 +147,10 @@ export interface FileRoutesById {
   '/messaggi': typeof MessaggiRoute
   '/negozio': typeof NegozioRoute
   '/nuova-password': typeof NuovaPasswordRoute
+  '/privacy': typeof PrivacyRoute
   '/profilo': typeof ProfiloRoute
   '/setup': typeof SetupRoute
+  '/termini': typeof TerminiRoute
   '/chat/$id': typeof ChatIdRoute
 }
 export interface FileRouteTypes {
@@ -148,8 +166,10 @@ export interface FileRouteTypes {
     | '/messaggi'
     | '/negozio'
     | '/nuova-password'
+    | '/privacy'
     | '/profilo'
     | '/setup'
+    | '/termini'
     | '/chat/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -163,8 +183,10 @@ export interface FileRouteTypes {
     | '/messaggi'
     | '/negozio'
     | '/nuova-password'
+    | '/privacy'
     | '/profilo'
     | '/setup'
+    | '/termini'
     | '/chat/$id'
   id:
     | '__root__'
@@ -178,8 +200,10 @@ export interface FileRouteTypes {
     | '/messaggi'
     | '/negozio'
     | '/nuova-password'
+    | '/privacy'
     | '/profilo'
     | '/setup'
+    | '/termini'
     | '/chat/$id'
   fileRoutesById: FileRoutesById
 }
@@ -194,8 +218,10 @@ export interface RootRouteChildren {
   MessaggiRoute: typeof MessaggiRoute
   NegozioRoute: typeof NegozioRoute
   NuovaPasswordRoute: typeof NuovaPasswordRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfiloRoute: typeof ProfiloRoute
   SetupRoute: typeof SetupRoute
+  TerminiRoute: typeof TerminiRoute
   ChatIdRoute: typeof ChatIdRoute
 }
 
@@ -271,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NuovaPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profilo': {
       id: '/profilo'
       path: '/profilo'
@@ -283,6 +316,13 @@ declare module '@tanstack/react-router' {
       path: '/setup'
       fullPath: '/setup'
       preLoaderRoute: typeof SetupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/termini': {
+      id: '/termini'
+      path: '/termini'
+      fullPath: '/termini'
+      preLoaderRoute: typeof TerminiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat/$id': {
@@ -306,8 +346,10 @@ const rootRouteChildren: RootRouteChildren = {
   MessaggiRoute: MessaggiRoute,
   NegozioRoute: NegozioRoute,
   NuovaPasswordRoute: NuovaPasswordRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfiloRoute: ProfiloRoute,
   SetupRoute: SetupRoute,
+  TerminiRoute: TerminiRoute,
   ChatIdRoute: ChatIdRoute,
 }
 export const routeTree = rootRouteImport

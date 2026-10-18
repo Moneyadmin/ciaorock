@@ -77,6 +77,14 @@ export const submitRockRating = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const feedback = data.feedback?.trim() || null;
+    if (feedback) {
+      const { checkText } = await import("./moderation.server");
+      const text = await checkText(
+        "rock",
+        `Commento di un giocatore sul nascondiglio: ${feedback}`,
+      );
+      if (!text.ok) throw new Error(text.message);
+    }
     const { error } = await context.supabase
       .from("rock_ratings")
       .upsert(

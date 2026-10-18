@@ -7,8 +7,9 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
 import { Plate } from "@/components/Plate";
-import { equipPlate, fetchMyPurchases, fetchWallet, sanitizeBio, updateBio } from "@/lib/api";
-import { removeAvatar, uploadAvatar } from "@/lib/profile.functions";
+import { equipPlate, fetchMyPurchases, fetchWallet, sanitizeBio } from "@/lib/api";
+import { removeAvatar, saveBio as saveBioServer, uploadAvatar } from "@/lib/profile.functions";
+import { DeleteAccount } from "@/components/DeleteAccount";
 import { squareAvatar } from "@/lib/rockdex";
 import { useSession } from "@/lib/useSession";
 import { useShopItems } from "@/lib/useShop";
@@ -27,6 +28,7 @@ function ProfilePage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const upload = useServerFn(uploadAvatar);
   const remove = useServerFn(removeAvatar);
+  const saveBioFn = useServerFn(saveBioServer);
   const { byId } = useShopItems();
   const [bio, setBio] = useState("");
   const [savingBio, setSavingBio] = useState(false);
@@ -85,7 +87,8 @@ function ProfilePage() {
     if (!userId) return;
     setSavingBio(true);
     try {
-      await updateBio(userId, bio);
+      const res = await saveBioFn({ data: { bio } });
+      if (!res.ok) return void toast.error(res.message);
       setBio(sanitizeBio(bio));
       await refresh();
       toast.success("Bio salvata");
@@ -256,6 +259,21 @@ function ProfilePage() {
             })}
           </div>
         )}
+      </section>
+      <section className="mt-8 space-y-2 pb-6">
+        <h2 className="text-lg">Privacy</h2>
+        <p className="text-xs text-muted-foreground">
+          Leggi l'
+          <Link to="/privacy" className="font-bold underline">
+            informativa privacy
+          </Link>{" "}
+          e i{" "}
+          <Link to="/termini" className="font-bold underline">
+            termini d'uso
+          </Link>
+          .
+        </p>
+        <DeleteAccount />
       </section>
     </AppShell>
   );

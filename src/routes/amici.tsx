@@ -380,13 +380,19 @@ function ProfileSheet({
             {person.bio || "Nessuna descrizione."}
           </p>
         </div>
-        <Link
-          to="/chat/$id"
-          params={{ id: person.id }}
-          className="press bg-brand mt-4 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 font-extrabold text-white shadow-glow"
-        >
-          <MessageCircle className="h-5 w-5" /> Invia un messaggio
-        </Link>
+        {isFriend ? (
+          <Link
+            to="/chat/$id"
+            params={{ id: person.id }}
+            className="press bg-brand mt-4 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 font-extrabold text-white shadow-glow"
+          >
+            <MessageCircle className="h-5 w-5" /> Invia un messaggio
+          </Link>
+        ) : (
+          <p className="mt-4 rounded-2xl bg-muted px-4 py-3 text-center text-xs font-semibold text-muted-foreground">
+            Potete scrivervi quando siete amici: mandagli una richiesta di amicizia.
+          </p>
+        )}
         {isFriend && userId && (
           <button
             type="button"

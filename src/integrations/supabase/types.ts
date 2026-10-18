@@ -301,6 +301,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      find_photos: {
+        Row: { find_id: string; photo: string; user_id: string };
+        Insert: { find_id: string; photo: string; user_id: string };
+        Update: { find_id?: string; photo?: string; user_id?: string };
+        Relationships: [];
+      };
+      consents: {
+        Row: {
+          accepted_at: string;
+          age_14_declared: boolean;
+          terms_version: string;
+          user_id: string;
+        };
+        Insert: {
+          accepted_at?: string;
+          age_14_declared: boolean;
+          terms_version: string;
+          user_id: string;
+        };
+        Update: {
+          accepted_at?: string;
+          age_14_declared?: boolean;
+          terms_version?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       shop_items: {
         Row: {
           active: boolean;
@@ -604,6 +631,8 @@ export type Database = {
         }[];
       };
       my_wallet: { Args: never; Returns: { balance: number; earned: number; spent: number }[] };
+      prepare_account_deletion: { Args: { _uid: string }; Returns: undefined };
+      accept_terms: { Args: { _birth: string; _version: string }; Returns: undefined };
       claim_rewards: {
         Args: never;
         Returns: { icon: string; id: string; kind: string; label: string; style: string }[];
