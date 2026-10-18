@@ -88,7 +88,7 @@ function InboxPage() {
             params={{ id: other.id }}
             className="pebble-card press flex items-center gap-3 rounded-[1.3rem] p-2.5 pr-4"
           >
-            <Avatar name={other.nickname} className="h-12 w-12 text-xl" />
+            <Avatar name={other.nickname} src={other.avatar_url} className="h-12 w-12 text-xl" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate font-extrabold">@{other.nickname}</span>

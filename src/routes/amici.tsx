@@ -7,6 +7,7 @@ import {
   Loader2,
   MessageCircle,
   Search,
+  Swords,
   UserMinus,
   UserPlus,
   Users,
@@ -14,6 +15,9 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { Avatar } from "@/components/Avatar";
+import { CoopPicker } from "@/components/CoopPicker";
+import { Plate } from "@/components/Plate";
+import { useShopItems } from "@/lib/useShop";
 import {
   addFriend,
   countCreated,
@@ -158,7 +162,7 @@ function FriendsPage() {
                 key={person.id}
                 className="pebble-card flex items-center gap-3 rounded-[1.3rem] p-2.5 ring-2 ring-primary/25"
               >
-                <Avatar name={person.nickname} />
+                <Avatar name={person.nickname} src={person.avatar_url} />
                 <p className="min-w-0 flex-1 truncate font-extrabold">@{person.nickname}</p>
                 <button
                   onClick={() => void accept(person)}
@@ -221,7 +225,14 @@ function FriendsPage() {
         ))}
       </div>
 
-      {openProfile && <ProfileSheet person={openProfile} onClose={() => setOpenProfile(null)} />}
+      {openProfile && (
+        <ProfileSheet
+          person={openProfile}
+          userId={userId}
+          isFriend={stateOf(openProfile.id) === "friend"}
+          onClose={() => setOpenProfile(null)}
+        />
+      )}
     </AppShell>
   );
 }
@@ -250,6 +261,8 @@ function Row({
   onToggle: () => void;
   onOpen: () => void;
 }) {
+  const { byId } = useShopItems();
+  const plate = person.plate_id ? byId.get(person.plate_id) : null;
   return (
     <div className="pebble-card flex items-center gap-3 rounded-[1.3rem] p-2.5">
       <button
@@ -257,10 +270,15 @@ function Row({
         className="press"
         aria-label={`Apri il profilo di ${person.nickname}`}
       >
-        <Avatar name={person.nickname} />
+        <Avatar name={person.nickname} src={person.avatar_url} />
       </button>
       <button onClick={onOpen} className="min-w-0 flex-1 text-left">
         <p className="truncate font-extrabold">@{person.nickname}</p>
+        {plate && (
+          <div className="my-0.5">
+            <Plate label={plate.label} style={plate.style} />
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">Serie migliore: {person.streak_best} giorni</p>
       </button>
       <button
@@ -291,7 +309,20 @@ function Row({
   );
 }
 
-function ProfileSheet({ person, onClose }: { person: ProfileRow; onClose: () => void }) {
+function ProfileSheet({
+  person,
+  userId,
+  isFriend,
+  onClose,
+}: {
+  person: ProfileRow;
+  userId: string | null;
+  isFriend: boolean;
+  onClose: () => void;
+}) {
+  const { byId } = useShopItems();
+  const plate = person.plate_id ? byId.get(person.plate_id) : null;
+  const [coop, setCoop] = useState(false);
   const statsQuery = useQuery({
     queryKey: ["profile-stats", person.id],
     queryFn: async () => {
@@ -327,12 +358,18 @@ function ProfileSheet({ person, onClose }: { person: ProfileRow; onClose: () => 
         <div className="flex flex-col items-center text-center">
           <Avatar
             name={person.nickname}
+            src={person.avatar_url}
             className="h-20 w-20 text-4xl shadow-lift ring-4 ring-secondary"
           />
           <h2 className="mt-3 max-w-full truncate text-[1.75rem] leading-tight">
             @{person.nickname}
           </h2>
-          <p className="mt-0.5 text-sm text-muted-foreground">
+          {plate && (
+            <div className="mt-1">
+              <Plate label={plate.label} style={plate.style} size="md" />
+            </div>
+          )}
+          <p className="mt-2 whitespace-pre-line break-words text-sm text-muted-foreground">
             {person.bio || "Nessuna descrizione."}
           </p>
         </div>
@@ -343,6 +380,18 @@ function ProfileSheet({ person, onClose }: { person: ProfileRow; onClose: () => 
         >
           <MessageCircle className="h-5 w-5" /> Invia un messaggio
         </Link>
+        {isFriend && userId && (
+          <button
+            type="button"
+            onClick={() => setCoop(true)}
+            className="press mt-2 flex w-full items-center justify-center gap-2 rounded-2xl bg-ink py-3.5 font-extrabold text-ink-foreground"
+          >
+            <Swords className="h-5 w-5 text-lime" /> Missione Co-op (30 min, punti ×2)
+          </button>
+        )}
+        {coop && userId && (
+          <CoopPicker userId={userId} partner={person} onClose={() => setCoop(false)} />
+        )}
         <div className="mt-4 grid grid-cols-3 gap-2 text-center">
           {[
             ["Trovati", finds.length],

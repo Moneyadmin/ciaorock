@@ -108,7 +108,13 @@ function ChatPage() {
       <div className="mt-4 space-y-1.5 pb-40">
         {messages.length === 0 && (
           <div className="flex flex-col items-center py-10 text-center">
-            {other && <Avatar name={other.nickname} className="h-16 w-16 text-3xl shadow-lift" />}
+            {other && (
+              <Avatar
+                name={other.nickname}
+                src={other.avatar_url}
+                className="h-16 w-16 text-3xl shadow-lift"
+              />
+            )}
             <p className="mt-3 text-sm font-semibold text-muted-foreground">
               Nessun messaggio. Scrivi il primo!
             </p>

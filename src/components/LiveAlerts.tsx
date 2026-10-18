@@ -54,6 +54,23 @@ export function LiveAlerts() {
           notify(title, msg.body);
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "coop_missions",
+          filter: `partner_id=eq.${userId}`,
+        },
+        async (p) => {
+          const m = p.new as { creator_id: string };
+          const sender = await fetchProfileById(m.creator_id).catch(() => null);
+          const title = `⚔️ ${sender ? "@" + sender.nickname : "Un amico"} ti sfida a una Missione Co-op!`;
+          const body = "Apri la mappa per accettare: 30 minuti, punti ×2.";
+          toast(title, { description: body, duration: 10000 });
+          notify(title, body);
+        },
+      )
       .subscribe();
 
     return () => {

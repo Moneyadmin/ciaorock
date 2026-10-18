@@ -10,6 +10,8 @@ type Props = {
   foundIds: string[];
   onSelect: (rock: RockRow) => void;
   friends?: FriendLocation[];
+  /** sassi obiettivo di una missione co-op in corso (evidenziati) */
+  targetIds?: string[];
   onVisibleCount?: (count: number) => void;
   /** Admin: tenere premuto un sasso 5 secondi lo "sblocca", poi si tocca la mappa. */
   adminMove?: boolean;
@@ -111,7 +113,11 @@ export default function MapView(props: Props) {
         const marker = L.marker([rock.lat, rock.lng], {
           icon: L.divIcon({
             className: "",
-            html: rockPinHtml({ found: isFound, dragging: armed }),
+            html: rockPinHtml({
+              found: isFound,
+              dragging: armed,
+              target: (dataRef.current.targetIds ?? []).includes(rock.id),
+            }),
             iconSize: [44, 52],
             iconAnchor: [22, 50],
           }),
@@ -216,7 +222,7 @@ export default function MapView(props: Props) {
 
   useEffect(() => {
     render.current();
-  }, [rocks, foundIds, me.lat, me.lng, props.friends]);
+  }, [rocks, foundIds, me.lat, me.lng, props.friends, props.targetIds]);
 
   useEffect(() => {
     return () => {

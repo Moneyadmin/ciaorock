@@ -114,3 +114,36 @@ export function getPrecisePosition(): Promise<{ lat: number; lng: number; accura
     }
   });
 }
+
+/** Ritaglia al centro un quadrato e lo riduce (foto profilo leggera, ~30–60 KB). */
+export async function squareAvatar(file: File, size = 320, quality = 0.82): Promise<string> {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("Immagine non valida"));
+      image.src = url;
+    });
+    const side = Math.min(img.width, img.height);
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Immagine non valida");
+    ctx.drawImage(
+      img,
+      (img.width - side) / 2,
+      (img.height - side) / 2,
+      side,
+      side,
+      0,
+      0,
+      size,
+      size,
+    );
+    return canvas.toDataURL("image/jpeg", quality);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}

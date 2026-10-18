@@ -157,3 +157,41 @@ export async function checkSameRock(photo: string, reference: string): Promise<R
     return { approved: false, message: "Verifica della foto non riuscita. Riprova." };
   }
 }
+
+const AvatarVerdict = z.object({ ok: z.boolean(), reason: z.string() });
+
+/** La foto profilo è adatta a un'app per ragazzi dai 12 ai 18 anni? */
+export async function checkAvatar(photo: string): Promise<RockPhotoCheck> {
+  const { createOpenRouter, VISION_MODEL } = await import("./ai.server");
+  const openrouter = createOpenRouter();
+  if (!openrouter) {
+    return { approved: false, message: "Controllo della foto non disponibile. Riprova più tardi." };
+  }
+  try {
+    const result = streamText({
+      model: openrouter(VISION_MODEL),
+      output: Output.object({ schema: AvatarVerdict }),
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: 'È la foto profilo di un\'app di gioco per ragazzi dai 12 ai 18 anni. Rispondi SOLO con JSON con le chiavi "ok" (boolean) e "reason" (frase breve in italiano, rivolta al ragazzo). ok=false se la foto contiene nudità o contenuti sessuali, violenza, sangue, armi, droghe, alcol o fumo, simboli d\'odio, gesti o scritte volgari o offensive, oppure dati personali leggibili (numeri di telefono, indirizzi, targhe, nomi di scuole). Selfie, animali, disegni, paesaggi e sassi dipinti vanno bene.',
+            },
+            { type: "file", mediaType: mediaTypeOf(photo), data: photo },
+          ],
+        },
+      ],
+    });
+    const verdict = await result.output;
+    return verdict.ok
+      ? { approved: true, message: "Foto approvata." }
+      : { approved: false, message: `Foto non adatta: ${verdict.reason}` };
+  } catch (error) {
+    if (NoObjectGeneratedError.isInstance(error)) {
+      return { approved: false, message: "Non ho capito la foto. Riprova con un'altra immagine." };
+    }
+    return { approved: false, message: "Controllo della foto non riuscito. Riprova." };
+  }
+}

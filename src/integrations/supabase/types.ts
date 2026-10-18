@@ -199,6 +199,135 @@ export type Database = {
           },
         ];
       };
+      coop_missions: {
+        Row: {
+          accepted_at: string | null;
+          completed_at: string | null;
+          created_at: string;
+          creator_bonus: number | null;
+          creator_found_at: string | null;
+          creator_id: string;
+          expires_at: string;
+          id: string;
+          partner_bonus: number | null;
+          partner_found_at: string | null;
+          partner_id: string;
+          rock_id: string;
+          status: string;
+        };
+        Insert: {
+          accepted_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          creator_bonus?: number | null;
+          creator_found_at?: string | null;
+          creator_id: string;
+          expires_at: string;
+          id?: string;
+          partner_bonus?: number | null;
+          partner_found_at?: string | null;
+          partner_id: string;
+          rock_id: string;
+          status?: string;
+        };
+        Update: {
+          accepted_at?: string | null;
+          completed_at?: string | null;
+          created_at?: string;
+          creator_bonus?: number | null;
+          creator_found_at?: string | null;
+          creator_id?: string;
+          expires_at?: string;
+          id?: string;
+          partner_bonus?: number | null;
+          partner_found_at?: string | null;
+          partner_id?: string;
+          rock_id?: string;
+          status?: string;
+        };
+        Relationships: [];
+      };
+      points_ledger: {
+        Row: {
+          amount: number;
+          created_at: string;
+          id: string;
+          reason: string;
+          ref: string;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          created_at?: string;
+          id?: string;
+          reason: string;
+          ref: string;
+          user_id: string;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string;
+          id?: string;
+          reason?: string;
+          ref?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      purchases: {
+        Row: {
+          created_at: string;
+          item_id: string;
+          price: number;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          item_id: string;
+          price: number;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          item_id?: string;
+          price?: number;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      shop_items: {
+        Row: {
+          active: boolean;
+          description: string;
+          id: string;
+          kind: string;
+          label: string;
+          price: number;
+          sort: number;
+          style: string;
+        };
+        Insert: {
+          active?: boolean;
+          description?: string;
+          id: string;
+          kind?: string;
+          label: string;
+          price: number;
+          sort?: number;
+          style?: string;
+        };
+        Update: {
+          active?: boolean;
+          description?: string;
+          id?: string;
+          kind?: string;
+          label?: string;
+          price?: number;
+          sort?: number;
+          style?: string;
+        };
+        Relationships: [];
+      };
       player_locations: {
         Row: {
           lat: number;
@@ -222,6 +351,7 @@ export type Database = {
       };
       profiles: {
         Row: {
+          avatar_url: string | null;
           banned: boolean;
           bio: string;
           created_at: string;
@@ -230,12 +360,14 @@ export type Database = {
           latitude: number | null;
           longitude: number | null;
           nickname: string;
+          plate_id: string | null;
           points_adjust: number;
           streak_best: number;
           streak_current: number;
           updated_at: string | null;
         };
         Insert: {
+          avatar_url?: string | null;
           banned?: boolean;
           bio?: string;
           created_at?: string;
@@ -250,6 +382,7 @@ export type Database = {
           updated_at?: string | null;
         };
         Update: {
+          avatar_url?: string | null;
           banned?: boolean;
           bio?: string;
           created_at?: string;
@@ -258,6 +391,7 @@ export type Database = {
           latitude?: number | null;
           longitude?: number | null;
           nickname?: string;
+          plate_id?: string | null;
           points_adjust?: number;
           streak_best?: number;
           streak_current?: number;
@@ -422,8 +556,33 @@ export type Database = {
       tier_from_avg: { Args: { _avg: number }; Returns: string };
       touch_streak: {
         Args: never;
-        Returns: { last_login_date: string | null; streak_best: number; streak_current: number }[];
+        Returns: {
+          daily_bonus: number;
+          last_login_date: string | null;
+          streak_best: number;
+          streak_current: number;
+        }[];
       };
+      buy_item: { Args: { _item: string }; Returns: number };
+      coop_cancel: { Args: { _mission: string }; Returns: undefined };
+      coop_invite: { Args: { _partner: string; _rock: string }; Returns: string };
+      coop_respond: { Args: { _accept: boolean; _mission: string }; Returns: string };
+      equip_plate: { Args: { _item: string | null }; Returns: undefined };
+      leaderboard: {
+        Args: never;
+        Returns: {
+          avatar_url: string | null;
+          created: number;
+          found: number;
+          id: string;
+          nickname: string;
+          plate_label: string | null;
+          plate_style: string | null;
+          points: number;
+          streak_best: number;
+        }[];
+      };
+      my_wallet: { Args: never; Returns: { balance: number; earned: number; spent: number }[] };
       tier_points: { Args: { _tier: string }; Returns: number };
     };
     Enums: {

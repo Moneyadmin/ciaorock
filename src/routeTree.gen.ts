@@ -17,7 +17,9 @@ import { Route as ClassificaRouteImport } from './routes/classifica'
 import { Route as CollezioneRouteImport } from './routes/collezione'
 import { Route as CreaRouteImport } from './routes/crea'
 import { Route as MessaggiRouteImport } from './routes/messaggi'
+import { Route as NegozioRouteImport } from './routes/negozio'
 import { Route as NuovaPasswordRouteImport } from './routes/nuova-password'
+import { Route as ProfiloRouteImport } from './routes/profilo'
 import { Route as SetupRouteImport } from './routes/setup'
 import { Route as ChatIdRouteImport } from './routes/chat.$id'
 
@@ -61,9 +63,19 @@ const MessaggiRoute = MessaggiRouteImport.update({
   path: '/messaggi',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NegozioRoute = NegozioRouteImport.update({
+  id: '/negozio',
+  path: '/negozio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NuovaPasswordRoute = NuovaPasswordRouteImport.update({
   id: '/nuova-password',
   path: '/nuova-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfiloRoute = ProfiloRouteImport.update({
+  id: '/profilo',
+  path: '/profilo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SetupRoute = SetupRouteImport.update({
@@ -86,7 +98,9 @@ export interface FileRoutesByFullPath {
   '/collezione': typeof CollezioneRoute
   '/crea': typeof CreaRoute
   '/messaggi': typeof MessaggiRoute
+  '/negozio': typeof NegozioRoute
   '/nuova-password': typeof NuovaPasswordRoute
+  '/profilo': typeof ProfiloRoute
   '/setup': typeof SetupRoute
   '/chat/$id': typeof ChatIdRoute
 }
@@ -99,7 +113,9 @@ export interface FileRoutesByTo {
   '/collezione': typeof CollezioneRoute
   '/crea': typeof CreaRoute
   '/messaggi': typeof MessaggiRoute
+  '/negozio': typeof NegozioRoute
   '/nuova-password': typeof NuovaPasswordRoute
+  '/profilo': typeof ProfiloRoute
   '/setup': typeof SetupRoute
   '/chat/$id': typeof ChatIdRoute
 }
@@ -113,7 +129,9 @@ export interface FileRoutesById {
   '/collezione': typeof CollezioneRoute
   '/crea': typeof CreaRoute
   '/messaggi': typeof MessaggiRoute
+  '/negozio': typeof NegozioRoute
   '/nuova-password': typeof NuovaPasswordRoute
+  '/profilo': typeof ProfiloRoute
   '/setup': typeof SetupRoute
   '/chat/$id': typeof ChatIdRoute
 }
@@ -128,7 +146,9 @@ export interface FileRouteTypes {
     | '/collezione'
     | '/crea'
     | '/messaggi'
+    | '/negozio'
     | '/nuova-password'
+    | '/profilo'
     | '/setup'
     | '/chat/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -141,7 +161,9 @@ export interface FileRouteTypes {
     | '/collezione'
     | '/crea'
     | '/messaggi'
+    | '/negozio'
     | '/nuova-password'
+    | '/profilo'
     | '/setup'
     | '/chat/$id'
   id:
@@ -154,7 +176,9 @@ export interface FileRouteTypes {
     | '/collezione'
     | '/crea'
     | '/messaggi'
+    | '/negozio'
     | '/nuova-password'
+    | '/profilo'
     | '/setup'
     | '/chat/$id'
   fileRoutesById: FileRoutesById
@@ -168,7 +192,9 @@ export interface RootRouteChildren {
   CollezioneRoute: typeof CollezioneRoute
   CreaRoute: typeof CreaRoute
   MessaggiRoute: typeof MessaggiRoute
+  NegozioRoute: typeof NegozioRoute
   NuovaPasswordRoute: typeof NuovaPasswordRoute
+  ProfiloRoute: typeof ProfiloRoute
   SetupRoute: typeof SetupRoute
   ChatIdRoute: typeof ChatIdRoute
 }
@@ -231,11 +257,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MessaggiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/negozio': {
+      id: '/negozio'
+      path: '/negozio'
+      fullPath: '/negozio'
+      preLoaderRoute: typeof NegozioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/nuova-password': {
       id: '/nuova-password'
       path: '/nuova-password'
       fullPath: '/nuova-password'
       preLoaderRoute: typeof NuovaPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profilo': {
+      id: '/profilo'
+      path: '/profilo'
+      fullPath: '/profilo'
+      preLoaderRoute: typeof ProfiloRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/setup': {
@@ -264,7 +304,9 @@ const rootRouteChildren: RootRouteChildren = {
   CollezioneRoute: CollezioneRoute,
   CreaRoute: CreaRoute,
   MessaggiRoute: MessaggiRoute,
+  NegozioRoute: NegozioRoute,
   NuovaPasswordRoute: NuovaPasswordRoute,
+  ProfiloRoute: ProfiloRoute,
   SetupRoute: SetupRoute,
   ChatIdRoute: ChatIdRoute,
 }

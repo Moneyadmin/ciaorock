@@ -7,3 +7,5 @@
 - `import-test.sql`: verifica la funzione `admin_import` usata dalla pagina /setup (punti storici conservati,
   coordinate dei ritrovamenti rimosse, reimportazione senza doppioni, vietata ai giocatori). Stesse
   avvertenze: solo su un Postgres di prova.
+- `features-test.sql`: bonus creatore, bonus giornaliero, negozio (saldo separato dalla classifica),
+  profilo protetto e missioni co-op (inviti, timer, raddoppio, scadenza).

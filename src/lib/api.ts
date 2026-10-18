@@ -27,6 +27,8 @@ export type ProfileRow = {
   bio: string;
   streak_current: number;
   streak_best: number;
+  avatar_url?: string | null;
+  plate_id?: string | null;
 };
 
 type RockSelect = {
@@ -47,6 +49,8 @@ type RockSelect = {
   hider: { nickname: string } | null;
   finds: { count: number }[];
 };
+
+const PROFILE_COLS = "id,nickname,bio,streak_current,streak_best,avatar_url,plate_id";
 
 const ROCK_SELECT =
   "id,name,clue,lat,lng,difficulty,points,rating_avg,rating_count,move_count,created_at,creator_id,hidden_by,creator:profiles!rocks_creator_id_fkey(nickname),hider:profiles!rocks_hidden_by_fkey(nickname),finds(count)";
@@ -188,14 +192,12 @@ export async function registerFind(input: {
 export async function searchProfiles(query: string): Promise<ProfileRow[]> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id,nickname,bio,streak_current,streak_best")
+    .select(PROFILE_COLS)
     .ilike("nickname", `%${query}%`)
     .limit(20);
   if (error) throw new Error(error.message);
   return (data ?? []) as ProfileRow[];
 }
-
-const PROFILE_COLS = "id,nickname,bio,streak_current,streak_best";
 
 type FriendLink = { user_id: string; friend_id: string; status: string };
 
@@ -292,6 +294,9 @@ export type LeaderRow = {
   created: number;
   streak_best: number;
   points: number;
+  avatar_url: string | null;
+  plate_label: string | null;
+  plate_style: string | null;
 };
 
 export async function isAdmin(userId: string): Promise<boolean> {
@@ -322,7 +327,7 @@ export type AnnouncementRow = {
 export async function fetchProfileById(id: string): Promise<ProfileRow | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("id,nickname,bio,streak_current,streak_best")
+    .select(PROFILE_COLS)
     .eq("id", id)
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -373,7 +378,7 @@ export async function fetchInbox(meId: string): Promise<InboxEntry[]> {
   if (latest.size === 0) return [];
   const { data: profs } = await supabase
     .from("profiles")
-    .select("id,nickname,bio,streak_current,streak_best")
+    .select(PROFILE_COLS)
     .in("id", [...latest.keys()]);
   const byId = new Map(((profs ?? []) as ProfileRow[]).map((p) => [p.id, p]));
   return [...latest.entries()]
@@ -399,66 +404,15 @@ export async function fetchDoubleDays(): Promise<Array<{ day: string; multiplier
   return (data ?? []) as Array<{ day: string; multiplier: number }>;
 }
 
+/**
+ * Classifica calcolata dal database: punti dei sassi trovati (con le giornate speciali), 15 per
+ * ogni sasso creato, bonus (giornaliero, creatore, co-op) e correzioni dello staff. Gli acquisti
+ * nel negozio non la abbassano.
+ */
 export async function fetchLeaderboard(): Promise<LeaderRow[]> {
-  const [profiles, finds, rocks, doubles] = await Promise.all([
-    supabase.from("profiles").select("id,nickname,streak_best,points_adjust,banned"),
-    supabase.from("finds").select("user_id,found_at,points_awarded"),
-    supabase.from("rocks").select("creator_id,created_at"),
-    supabase.from("double_days").select("day,multiplier"),
-  ]);
-  if (profiles.error) throw new Error(profiles.error.message);
-
-  const multipliers = new Map<string, number>();
-  for (const row of (doubles.data ?? []) as Array<{ day: string; multiplier: number }>) {
-    multipliers.set(row.day, row.multiplier);
-  }
-  const factor = (iso: string) => multipliers.get(iso.slice(0, 10)) ?? 1;
-
-  const foundBy = new Map<string, number>();
-  const foundPoints = new Map<string, number>();
-  for (const row of (finds.data ?? []) as Array<{
-    user_id: string;
-    found_at: string;
-    points_awarded: number | null;
-  }>) {
-    foundBy.set(row.user_id, (foundBy.get(row.user_id) ?? 0) + 1);
-    foundPoints.set(
-      row.user_id,
-      (foundPoints.get(row.user_id) ?? 0) + (row.points_awarded ?? 10) * factor(row.found_at),
-    );
-  }
-  const createdBy = new Map<string, number>();
-  const createdPoints = new Map<string, number>();
-  for (const row of (rocks.data ?? []) as Array<{ creator_id: string; created_at: string }>) {
-    createdBy.set(row.creator_id, (createdBy.get(row.creator_id) ?? 0) + 1);
-    createdPoints.set(
-      row.creator_id,
-      (createdPoints.get(row.creator_id) ?? 0) + 15 * factor(row.created_at),
-    );
-  }
-
-  return (
-    (profiles.data ?? []) as Array<{
-      id: string;
-      nickname: string;
-      streak_best: number;
-      points_adjust: number;
-      banned: boolean;
-    }>
-  )
-    .filter((p) => !p.banned)
-    .map((p) => ({
-      id: p.id,
-      nickname: p.nickname,
-      found: foundBy.get(p.id) ?? 0,
-      created: createdBy.get(p.id) ?? 0,
-      streak_best: p.streak_best,
-      points: Math.max(
-        0,
-        (foundPoints.get(p.id) ?? 0) + (createdPoints.get(p.id) ?? 0) + (p.points_adjust ?? 0),
-      ),
-    }))
-    .sort((a, b) => b.points - a.points || b.found - a.found);
+  const { data, error } = await supabase.rpc("leaderboard");
+  if (error) throw new Error(error.message);
+  return [...(data ?? [])].sort((a, b) => b.points - a.points || b.found - a.found);
 }
 
 export async function rateRock(rockId: string, userId: string, stars: number) {
@@ -510,4 +464,127 @@ export async function fetchFriendLocations(userId: string): Promise<FriendLocati
       lng: s.lng,
       updated_at: s.updated_at,
     }));
+}
+
+// ---------------------------------------------------------------------------
+// Profilo, negozio e missioni co-op
+// ---------------------------------------------------------------------------
+
+/** Toglie tag HTML e caratteri di controllo; massimo 500 caratteri (lo rifà anche il database). */
+export function sanitizeBio(text: string) {
+  return (
+    text
+      .replace(/<[^>]*>/g, "")
+      // eslint-disable-next-line no-control-regex -- togliere i caratteri di controllo è proprio lo scopo
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+      .slice(0, 500)
+      .trim()
+  );
+}
+
+export async function updateBio(userId: string, bio: string) {
+  const { error } = await supabase
+    .from("profiles")
+    .update({ bio: sanitizeBio(bio) })
+    .eq("id", userId);
+  if (error) throw new Error(error.message);
+}
+
+export type Wallet = { earned: number; spent: number; balance: number };
+
+export async function fetchWallet(): Promise<Wallet> {
+  const { data, error } = await supabase.rpc("my_wallet");
+  if (error) throw new Error(error.message);
+  return data?.[0] ?? { earned: 0, spent: 0, balance: 0 };
+}
+
+export type ShopItem = {
+  id: string;
+  label: string;
+  description: string;
+  price: number;
+  style: string;
+};
+
+export async function fetchShopItems(): Promise<ShopItem[]> {
+  const { data, error } = await supabase
+    .from("shop_items")
+    .select("id,label,description,price,style")
+    .eq("active", true)
+    .order("sort");
+  if (error) throw new Error(error.message);
+  return data ?? [];
+}
+
+export async function fetchMyPurchases(userId: string): Promise<string[]> {
+  const { data, error } = await supabase.from("purchases").select("item_id").eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((p) => p.item_id);
+}
+
+/** Errori leggibili dalle funzioni del database (il messaggio è già in italiano). */
+function rpcError(error: { message: string }) {
+  return new Error(error.message.replace(/^.*?ERROR:\s*/, ""));
+}
+
+export async function buyItem(itemId: string) {
+  const { data, error } = await supabase.rpc("buy_item", { _item: itemId });
+  if (error) throw rpcError(error);
+  return data;
+}
+
+export async function equipPlate(itemId: string | null) {
+  const { error } = await supabase.rpc("equip_plate", { _item: itemId });
+  if (error) throw rpcError(error);
+}
+
+export type CoopMission = {
+  id: string;
+  creator_id: string;
+  partner_id: string;
+  rock_id: string;
+  status: "pending" | "active" | "success" | "failed" | "declined" | "cancelled";
+  created_at: string;
+  accepted_at: string | null;
+  expires_at: string;
+  completed_at: string | null;
+  creator_found_at: string | null;
+  partner_found_at: string | null;
+  creator_bonus: number | null;
+  partner_bonus: number | null;
+  rock: { id: string; name: string; lat: number; lng: number } | null;
+};
+
+/** Missioni in corso o concluse nell'ultima ora (per mostrare l'esito). */
+export async function fetchMyMissions(userId: string): Promise<CoopMission[]> {
+  const since = new Date(Date.now() - 3600_000).toISOString();
+  const { data, error } = await supabase
+    .from("coop_missions")
+    .select("*, rock:rocks(id,name,lat,lng)")
+    .or(`creator_id.eq.${userId},partner_id.eq.${userId}`)
+    .or(`status.in.(pending,active),completed_at.gte.${since}`)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  if (error) throw new Error(error.message);
+  return (data ?? []) as unknown as CoopMission[];
+}
+
+export async function coopInvite(partnerId: string, rockId: string) {
+  const { data, error } = await supabase.rpc("coop_invite", { _partner: partnerId, _rock: rockId });
+  if (error) throw rpcError(error);
+  return data;
+}
+
+export async function coopRespond(missionId: string, accept: boolean) {
+  const { data, error } = await supabase.rpc("coop_respond", {
+    _mission: missionId,
+    _accept: accept,
+  });
+  if (error) throw rpcError(error);
+  return data;
+}
+
+export async function coopCancel(missionId: string) {
+  const { error } = await supabase.rpc("coop_cancel", { _mission: missionId });
+  if (error) throw rpcError(error);
 }

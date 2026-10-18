@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -11,9 +11,11 @@ import {
   LogOut,
   MapPin,
   Shield,
+  ShoppingBag,
   Sparkles,
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { Avatar } from "@/components/Avatar";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { Tutorial } from "@/components/Tutorial";
 import { BADGES, CATEGORY_LABELS, earnedBadgeIds, type BadgeCategory } from "@/lib/badges";
@@ -93,7 +95,30 @@ function CollectionPage() {
   }
 
   return (
-    <AppShell title="Il mio RockDex" subtitle={profile ? `@${profile.nickname}` : undefined}>
+    <AppShell
+      title="Il mio RockDex"
+      subtitle={profile ? `@${profile.nickname}` : undefined}
+      action={
+        profile && (
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              to="/negozio"
+              aria-label="Negozio"
+              className="press grid h-11 w-11 place-items-center rounded-2xl bg-sun text-ink shadow-pebble"
+            >
+              <ShoppingBag className="h-5 w-5" />
+            </Link>
+            <Link to="/profilo" aria-label="Il mio profilo" className="press">
+              <Avatar
+                name={profile.nickname}
+                src={profile.avatar_url}
+                className="h-11 w-11 text-lg ring-2 ring-primary/30"
+              />
+            </Link>
+          </div>
+        )
+      }
+    >
       <div className="grid grid-cols-4 gap-2">
         <Stat
           label="Trovati"

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { ProfileRow } from "@/lib/api";
 
@@ -7,7 +8,14 @@ async function touchStreak(profile: ProfileRow & { last_login_date: string | nul
   const { data, error } = await supabase.rpc("touch_streak");
   const row = data?.[0];
   if (error || !row) return profile;
-  return { ...profile, ...row };
+  const { daily_bonus, ...streak } = row;
+  if (daily_bonus > 0) {
+    toast.success(`+${daily_bonus} punti: bonus del giorno!`, {
+      id: "daily-bonus",
+      description: "Torna domani per prenderne altri.",
+    });
+  }
+  return { ...profile, ...streak };
 }
 
 export type SessionState = {
@@ -46,7 +54,9 @@ export function useSession(): SessionState {
     const [{ data: row }, { data: roleRow }] = await Promise.all([
       supabase
         .from("profiles")
-        .select("id,nickname,bio,streak_current,streak_best,last_login_date,banned")
+        .select(
+          "id,nickname,bio,streak_current,streak_best,last_login_date,banned,avatar_url,plate_id",
+        )
         .eq("id", user.id)
         .maybeSingle(),
       supabase
@@ -68,6 +78,8 @@ export function useSession(): SessionState {
         bio: fresh.bio,
         streak_current: fresh.streak_current,
         streak_best: fresh.streak_best,
+        avatar_url: (row as { avatar_url?: string | null }).avatar_url ?? null,
+        plate_id: (row as { plate_id?: string | null }).plate_id ?? null,
       });
     } else {
       // Nessun profilo: se l'account non esiste più sul server (es. cancellato o unito a un

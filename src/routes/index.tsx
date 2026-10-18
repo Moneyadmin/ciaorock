@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { CoopPanel, useCoopMissions } from "@/components/CoopPanel";
 import { Tutorial, tutorialPending } from "@/components/Tutorial";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -99,6 +100,8 @@ function MapPage() {
     if (userId && profile?.nickname && tutorialPending(userId)) setTutorial(true);
   }, [userId, profile?.nickname]);
   const [friends, setFriends] = useState<FriendLocation[]>([]);
+  const missions = useCoopMissions(userId);
+  const targetIds = missions.filter((m) => m.status === "active").map((m) => m.rock_id);
 
   // Posizione in tempo reale: segue il GPS e la salva sul profilo (max ogni 10s).
   useEffect(() => {
@@ -280,6 +283,7 @@ function MapPage() {
                 rocks={rocks}
                 me={position}
                 friends={friends}
+                targetIds={targetIds}
                 foundIds={foundIds}
                 onSelect={setSelected}
                 onVisibleCount={setVisible}
@@ -327,6 +331,17 @@ function MapPage() {
               </div>
             </div>
           </div>
+          {userId && (
+            <CoopPanel
+              userId={userId}
+              missions={missions}
+              onGoToRock={(rockId) => {
+                const rock = rocks.find((r) => r.id === rockId);
+                if (rock) setSelected(rock);
+                else setToast("Il sasso della missione non è più sulla mappa.");
+              }}
+            />
+          )}
           {bonus > 1 && (
             <div className="pointer-events-auto flex items-center gap-2 rounded-2xl bg-lime px-3.5 py-2.5 text-xs font-extrabold text-lime-foreground shadow-pebble">
               <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-ink text-lime">

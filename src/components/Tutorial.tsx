@@ -4,6 +4,8 @@ import {
   ArrowRight,
   Award,
   Camera,
+  Coins,
+  Crown,
   Lightbulb,
   MapPin,
   Paintbrush,
@@ -11,6 +13,7 @@ import {
   ShieldCheck,
   Sparkles,
   Star,
+  Swords,
   Trophy,
   Users,
   Zap,
@@ -80,7 +83,7 @@ const STEPS: Step[] = [
         <strong className="text-foreground">dipinge</strong> un sasso e lo{" "}
         <strong className="text-foreground">nasconde</strong>, e chi lo{" "}
         <strong className="text-foreground">trova</strong> seguendo la mappa e gli indizi. Ti spiego
-        tutto in 6 passi.
+        tutto in 7 passi.
       </p>
     ),
   },
@@ -193,6 +196,37 @@ const STEPS: Step[] = [
         </Point>
         <Point icon={<Users className="h-4 w-4" />}>
           Aggiungi gli amici per vederli sulla mappa e scrivergli.
+        </Point>
+      </ul>
+    ),
+  },
+  {
+    art: (
+      <div className="flex gap-2">
+        <Tile className="h-16 w-16 bg-gradient-to-br from-sun to-[#ff9f5c]">
+          <Coins className="h-8 w-8" />
+        </Tile>
+        <Tile className="h-16 w-16 bg-gradient-to-br from-ink to-primary">
+          <Swords className="h-8 w-8" />
+        </Tile>
+      </div>
+    ),
+    title: "Punti extra e negozio",
+    body: (
+      <ul className="space-y-3">
+        <Point icon={<Coins className="h-4 w-4" />}>
+          Ogni giorno, al primo accesso, ricevi <strong>15 punti</strong> bonus.
+        </Point>
+        <Point icon={<Paintbrush className="h-4 w-4" />}>
+          Quando qualcuno trova un <strong>tuo</strong> sasso, ricevi metà dei suoi punti.
+        </Point>
+        <Point icon={<Swords className="h-4 w-4" />}>
+          Sfida un amico a una <strong>Missione Co-op</strong>: 30 minuti per trovare lo stesso
+          sasso, e i punti valgono ×2.
+        </Point>
+        <Point icon={<Crown className="h-4 w-4" />}>
+          Nel <strong>negozio</strong> spendi il saldo per le targhette dorate (la classifica non
+          scende).
         </Point>
       </ul>
     ),

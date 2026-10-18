@@ -18,6 +18,29 @@ Il browser non scrive più direttamente ritrovamenti, nuovi sassi e spostamenti:
 | Spostare un sasso | averlo trovato (o creato), essere entro 75 m dal sasso, nuovo nascondiglio entro **150 m** da te, foto (AI) |
 | Creare un sasso | nascondiglio entro **150 m** dalla tua posizione GPS (gli **admin** possono crearlo ovunque), foto di un sasso dipinto (AI), campi validi |
 
+### Punti
+
+| Fonte | Punti |
+| --- | --- |
+| Trovare un sasso | i punti del sasso (50–2.000, decisi dall'AI e aggiustati dai voti), ×N nelle giornate speciali |
+| Creare un sasso | 15 |
+| Un altro giocatore trova un tuo sasso | **metà** dei punti che riceve lui |
+| Primo accesso del giorno | 15 |
+| Missione Co-op riuscita | i punti dei ritrovamenti fatti durante la missione raddoppiano (×2) |
+
+La classifica conta tutti i punti guadagnati; il **negozio** spende il *saldo* (guadagnati − spesi), quindi
+comprare non fa scendere in classifica. Classifica, saldo e acquisti li calcola il database
+(`leaderboard()`, `my_wallet()`, `buy_item()`), i bonus finiscono nella tabella `points_ledger`.
+
+**Missione Co-op**: dal profilo di un amico si sceglie un sasso che nessuno dei due ha trovato né creato;
+l'amico ha 10 minuti per accettare, poi parte il timer di 30 minuti. Se entrambi trovano il sasso in tempo,
+i punti di tutti i ritrovamenti fatti da ciascuno durante la missione vengono raddoppiati. Lo stato è nella
+tabella `coop_missions` e arriva alle app in tempo reale.
+
+**Profilo**: foto (controllata dall'AI prima di essere pubblicata, salvata nel bucket Storage `avatars` che
+solo il server può scrivere), bio di massimo 500 caratteri ripulita da HTML, targhetta dorata comprata nel
+negozio e mostrata sotto il nickname in classifica e nella lista amici.
+
 Le soglie sono in `src/lib/rules.ts`. La migrazione `supabase/migrations/20261015090000_regole_lato_server.sql`
 blocca nel database le scritture dirette, protegge punti/ban/serie del profilo e sposta la posizione dal vivo
 in `player_locations`, leggibile **solo dagli amici**.

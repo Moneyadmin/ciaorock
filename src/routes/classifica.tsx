@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Crown, Loader2, Trophy } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { avatarGradient, initialOf } from "@/lib/pins";
+import { Avatar } from "@/components/Avatar";
+import { Plate } from "@/components/Plate";
 import { fetchLeaderboard, type LeaderRow } from "@/lib/api";
 import { useSession } from "@/lib/useSession";
 
@@ -48,7 +49,7 @@ function LeaderboardPage() {
   const rest = podium.length ? rows.slice(3) : rows;
 
   return (
-    <AppShell title="Classifica" subtitle="10 punti per sasso trovato · 15 per sasso creato">
+    <AppShell title="Classifica" subtitle="Sassi trovati · sassi creati · bonus del giorno e co-op">
       <div className="flex gap-1 rounded-2xl bg-muted p-1" role="tablist">
         {SORTS.map((option) => (
           <button
@@ -94,20 +95,24 @@ function LeaderboardPage() {
               return (
                 <div key={row.id} className="flex flex-col items-center text-center">
                   {first && <Crown className="mb-1 h-6 w-6 text-sun" fill="currentColor" />}
-                  <span
-                    className={`grid place-items-center rounded-full border-[3px] font-display text-white shadow-lift ${
+                  <Avatar
+                    name={row.nickname}
+                    src={row.avatar_url}
+                    className={`border-[3px] shadow-lift ${
                       first
                         ? "h-[4.5rem] w-[4.5rem] border-sun text-3xl"
                         : "h-14 w-14 border-white/80 text-2xl"
                     }`}
-                    style={{ background: avatarGradient(row.nickname) }}
-                  >
-                    {initialOf(row.nickname)}
-                  </span>
+                  />
                   <p className="mt-1.5 w-full truncate text-xs font-extrabold">
                     @{row.nickname}
                     {row.id === userId && " (tu)"}
                   </p>
+                  {row.plate_label && (
+                    <div className="mt-0.5 flex max-w-full justify-center">
+                      <Plate label={row.plate_label} style={row.plate_style} />
+                    </div>
+                  )}
                   <p className="font-display text-lg leading-tight">
                     {value(row, sort).toLocaleString("it-IT")}
                   </p>
@@ -141,12 +146,7 @@ function LeaderboardPage() {
               >
                 {medal(index)}
               </span>
-              <span
-                className="grid h-10 w-10 shrink-0 place-items-center rounded-full font-display text-base text-white"
-                style={{ background: avatarGradient(row.nickname) }}
-              >
-                {initialOf(row.nickname)}
-              </span>
+              <Avatar name={row.nickname} src={row.avatar_url} className="h-10 w-10 text-base" />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-extrabold">
                   @{row.nickname}
@@ -156,6 +156,11 @@ function LeaderboardPage() {
                     </span>
                   )}
                 </p>
+                {row.plate_label && (
+                  <div className="my-0.5">
+                    <Plate label={row.plate_label} style={row.plate_style} />
+                  </div>
+                )}
                 <p className={`text-xs ${me ? "text-white/60" : "text-muted-foreground"}`}>
                   {row.found} trovati · {row.created} creati · serie {row.streak_best}
                 </p>
