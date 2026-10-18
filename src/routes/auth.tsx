@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/useSession";
-import { Loader2 } from "lucide-react";
+import { KeyRound, Loader2, Mail } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/auth")({
@@ -36,6 +36,12 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
+  /** accesso senza password: link o codice a 6 cifre via email */
+  const [otp, setOtp] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [code, setCode] = useState("");
+  /** dopo una password sbagliata mostriamo subito il pulsante per reimpostarla */
+  const [wrongPassword, setWrongPassword] = useState(false);
 
   useEffect(() => {
     if (!loading && userId && profile?.nickname) navigate({ to: "/" });
@@ -57,11 +63,12 @@ function AuthPage() {
           password: pass,
         });
         if (err) {
+          setWrongPassword(/invalid/i.test(err.message));
           setError(
             /not confirmed/i.test(err.message)
               ? "Devi ancora confermare l'email: apri il link che ti abbiamo mandato (controlla anche lo spam)."
               : err.message.toLowerCase().includes("invalid")
-                ? "Email o password non corretti. Giocavi alla vecchia Ciao Rock? Tocca “Password dimenticata?” per sceglierne una nuova."
+                ? "Email o password non corretti."
                 : err.message,
           );
           return;
@@ -96,6 +103,67 @@ function AuthPage() {
     }
   }
 
+  async function sendLoginEmail() {
+    setError(null);
+    setInfo(null);
+    const mail = email.trim().toLowerCase();
+    if (!mail) return setError("Scrivi la tua email.");
+    setBusy(true);
+    try {
+      const { error: err } = await supabase.auth.signInWithOtp({
+        email: mail,
+        options: { emailRedirectTo: window.location.origin, shouldCreateUser: true },
+      });
+      if (err) {
+        setError(
+          /rate limit|seconds/i.test(err.message)
+            ? "Hai già chiesto un'email da poco: aspetta un minuto e riprova."
+            : err.message,
+        );
+        return;
+      }
+      setOtpSent(true);
+      setInfo(
+        `Ti abbiamo scritto a ${mail}: tocca il link nell'email oppure scrivi il codice a 6 cifre che trovi nel messaggio. Controlla anche lo spam.`,
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyCode() {
+    setError(null);
+    const token = code.replace(/\D/g, "");
+    if (token.length !== 6) return setError("Il codice ha 6 cifre.");
+    setBusy(true);
+    try {
+      const { error: err } = await supabase.auth.verifyOtp({
+        email: email.trim().toLowerCase(),
+        token,
+        type: "email",
+      });
+      if (err) {
+        setError(
+          /expired|invalid/i.test(err.message)
+            ? "Codice sbagliato o scaduto: controlla l'ultima email o chiedine uno nuovo."
+            : err.message,
+        );
+        return;
+      }
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function exitOtp() {
+    setOtp(false);
+    setOtpSent(false);
+    setCode("");
+    setError(null);
+    setInfo(null);
+  }
+
   async function forgotPassword() {
     setError(null);
     setInfo(null);
@@ -115,6 +183,7 @@ function AuthPage() {
         );
         return;
       }
+      setWrongPassword(false);
       setInfo(
         `Se ${mail} è registrata, ti abbiamo mandato un'email con il link per scegliere una nuova password. Controlla anche lo spam.`,
       );
@@ -203,7 +272,10 @@ function AuthPage() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("signup")}
+              onClick={() => {
+                setMode("signup");
+                exitOtp();
+              }}
               className={`press flex-1 rounded-xl py-2.5 ${mode === "signup" ? "bg-ink text-ink-foreground shadow-pebble" : "text-muted-foreground"}`}
             >
               Registrati
@@ -216,35 +288,135 @@ function AuthPage() {
             type="email"
             placeholder="tu@email.it"
           />
-          <Field
-            label="Password"
-            value={password}
-            onChange={setPassword}
-            type="password"
-            placeholder="••••••"
-          />
-          {error && (
-            <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
-              {error}
-            </p>
-          )}
-          {info && (
-            <p className="rounded-xl bg-moss/15 px-3 py-2 text-sm font-semibold text-foreground">
-              {info}
-            </p>
-          )}
-          <PrimaryButton disabled={busy}>
-            {mode === "login" ? "Accedi" : "Crea account"}
-          </PrimaryButton>
-          {mode === "login" && (
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void forgotPassword()}
-              className="press w-full text-center text-sm font-extrabold text-primary"
-            >
-              Password dimenticata?
-            </button>
+          {mode === "login" && otp ? (
+            <>
+              {otpSent && (
+                <Field
+                  label="Codice dall'email"
+                  value={code}
+                  onChange={(v) => setCode(v.replace(/\D/g, "").slice(0, 6))}
+                  type="text"
+                  placeholder="123456"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                />
+              )}
+              {error && (
+                <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
+                  {error}
+                </p>
+              )}
+              {info && (
+                <p className="rounded-xl bg-moss/15 px-3 py-2 text-sm font-semibold text-foreground">
+                  {info}
+                </p>
+              )}
+              {otpSent ? (
+                <>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void verifyCode()}
+                    className="press bg-brand flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-extrabold text-white shadow-glow disabled:opacity-60"
+                  >
+                    {busy && <Loader2 className="h-5 w-5 animate-spin" />} Entra
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void sendLoginEmail()}
+                    className="press w-full text-center text-sm font-extrabold text-primary"
+                  >
+                    Mandami un'altra email
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void sendLoginEmail()}
+                  className="press bg-brand flex w-full items-center justify-center gap-2 rounded-2xl py-4 text-base font-extrabold text-white shadow-glow disabled:opacity-60"
+                >
+                  {busy ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Mail className="h-5 w-5" />
+                  )}
+                  Mandami il link di accesso
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={busy}
+                onClick={exitOtp}
+                className="press w-full text-center text-sm font-extrabold text-muted-foreground"
+              >
+                Accedi con la password
+              </button>
+            </>
+          ) : (
+            <>
+              <Field
+                label="Password"
+                value={password}
+                onChange={setPassword}
+                type="password"
+                placeholder="••••••"
+              />
+              {error && (
+                <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm font-semibold text-destructive">
+                  {error}
+                </p>
+              )}
+              {mode === "login" && wrongPassword && !info && (
+                <div className="space-y-2 rounded-2xl bg-secondary p-3">
+                  <p className="text-sm font-semibold text-secondary-foreground">
+                    Non ricordi la password, o giocavi alla vecchia Ciao Rock? Ti mandiamo un link
+                    per sceglierne una nuova.
+                  </p>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void forgotPassword()}
+                    className="press flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-extrabold text-primary-foreground"
+                  >
+                    <KeyRound className="h-4 w-4" /> Mandami il link per la nuova password
+                  </button>
+                </div>
+              )}
+              {info && (
+                <p className="rounded-xl bg-moss/15 px-3 py-2 text-sm font-semibold text-foreground">
+                  {info}
+                </p>
+              )}
+              <PrimaryButton disabled={busy}>
+                {mode === "login" ? "Accedi" : "Crea account"}
+              </PrimaryButton>
+              {mode === "login" && (
+                <>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      setOtp(true);
+                      setError(null);
+                      setInfo(null);
+                    }}
+                    className="press flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary py-3.5 text-sm font-extrabold text-secondary-foreground"
+                  >
+                    <Mail className="h-4 w-4" /> Accedi senza password, con un link via email
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void forgotPassword()}
+                    className="press w-full text-center text-sm font-extrabold text-primary"
+                  >
+                    Password dimenticata?
+                  </button>
+                </>
+              )}
+            </>
           )}
         </form>
       )}
@@ -258,12 +430,16 @@ function Field({
   onChange,
   type = "text",
   placeholder,
+  inputMode,
+  autoComplete,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
   placeholder?: string;
+  inputMode?: "numeric" | "email" | "text";
+  autoComplete?: string;
 }) {
   return (
     <label className="block">
@@ -274,6 +450,8 @@ function Field({
         type={type}
         value={value}
         placeholder={placeholder}
+        inputMode={inputMode}
+        autoComplete={autoComplete}
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-2xl border border-input bg-card px-4 py-3.5 text-base text-foreground outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
       />

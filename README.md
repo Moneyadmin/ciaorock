@@ -135,6 +135,9 @@ all'ora: per "Password dimenticata?" e per l'annuncio ai vecchi giocatori serve 
    `Ciao Rock: scegli la tua password` e come corpo il contenuto di
    `supabase/email-templates/reset-password.html`. Ai giocatori importati mostra l'annuncio della nuova
    Ciao Rock, a tutti gli altri il normale messaggio di recupero.
+   Allo stesso modo, nei template **Magic Link** e **Confirm signup** incolla
+   `supabase/email-templates/magic-link.html` e `confirm-signup.html`: contengono il link e il codice a 6
+   cifre per l'accesso senza password ("Accedi senza password, con un link via email").
 4. Supabase → *Authentication → Rate Limits*: alza **emails sent per hour** quanto consente il piano del
    servizio email (per l'invio iniziale a tutti i giocatori).
 
