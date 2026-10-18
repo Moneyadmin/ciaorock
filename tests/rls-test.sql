@@ -91,16 +91,7 @@ set role service_role;
 insert into public.friendships (user_id, friend_id, status) values ('aaaaaaaa-0000-4000-8000-000000000001','bbbbbbbb-0000-4000-8000-000000000002','accepted');
 reset role;
 set role authenticated; select pg_temp.as_user('aaaaaaaa-0000-4000-8000-000000000001');
-insert into public.player_locations (user_id, lat, lng) values (auth.uid(), 45.46, 9.19)
-  on conflict (user_id) do update set lat = excluded.lat, lng = excluded.lng;
-do $$ begin
-  insert into public.player_locations (user_id, lat, lng) values ('cccccccc-0000-4000-8000-000000000003', 1, 1);
-  raise exception 'FAIL scrittura posizione altrui permessa';
-exception when insufficient_privilege then raise notice 'OK   non si può scrivere la posizione di un altro'; end $$;
-select pg_temp.as_user('bbbbbbbb-0000-4000-8000-000000000002');
-select pg_temp.check((select count(*) = 1 from public.player_locations), 'l''amico vede la posizione');
-select pg_temp.as_user('cccccccc-0000-4000-8000-000000000003');
-select pg_temp.check((select count(*) = 0 from public.player_locations), 'lo sconosciuto NON vede la posizione');
+select pg_temp.check(to_regclass('public.player_locations') is null, 'posizione dal vivo non più salvata né condivisa');
 select pg_temp.check((select count(*) = 0 from public.profiles where latitude is not null), 'nessuna coordinata nei profili');
 reset role;
 \echo TUTTI I TEST SUPERATI

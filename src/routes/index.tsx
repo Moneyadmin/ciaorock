@@ -44,7 +44,6 @@ import {
   getPrecisePosition,
 } from "@/lib/rockdex";
 import { flushQueue } from "@/lib/sync";
-import { saveMyLocation, fetchFriendLocations, type FriendLocation } from "@/lib/api";
 import { useSession } from "@/lib/useSession";
 import { avatarGradient, initialOf } from "@/lib/pins";
 import { matchRockPhoto } from "@/lib/vision.functions";
@@ -104,39 +103,19 @@ function MapPage() {
   useEffect(() => {
     if (userId && profile?.nickname && tutorialPending(userId)) setTutorial(true);
   }, [userId, profile?.nickname]);
-  const [friends, setFriends] = useState<FriendLocation[]>([]);
   const missions = useCoopMissions(userId);
   const targetIds = missions.filter((m) => m.status === "active").map((m) => m.rock_id);
 
-  // Posizione in tempo reale: segue il GPS e la salva sul profilo (max ogni 10s).
+  // Posizione in tempo reale: segue il GPS solo su questo dispositivo (per la mappa e le
+  // distanze). Non viene salvata né mostrata ad altri giocatori.
   useEffect(() => {
     if (!userId || typeof navigator === "undefined" || !navigator.geolocation) return;
-    let lastSave = 0;
     const id = navigator.geolocation.watchPosition(
-      (pos) => {
-        const { latitude: lat, longitude: lng } = pos.coords;
-        setPosition({ lat, lng });
-        const now = Date.now();
-        if (now - lastSave < 10000) return;
-        lastSave = now;
-        saveMyLocation(userId, lat, lng).catch(() => undefined);
-      },
+      (pos) => setPosition({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => undefined,
       { enableHighAccuracy: true, maximumAge: 5000 },
     );
     return () => navigator.geolocation.clearWatch(id);
-  }, [userId]);
-
-  // Posizione degli amici, aggiornata ogni 12 secondi.
-  useEffect(() => {
-    if (!userId) return;
-    const load = () =>
-      fetchFriendLocations(userId)
-        .then(setFriends)
-        .catch(() => undefined);
-    load();
-    const t = setInterval(load, 12000);
-    return () => clearInterval(t);
   }, [userId]);
 
   // Giornata speciale: messaggio in cima alla mappa + notifica (una volta al giorno).
@@ -297,7 +276,6 @@ function MapPage() {
               <MapView
                 rocks={rocks}
                 me={position}
-                friends={friends}
                 targetIds={targetIds}
                 foundIds={foundIds}
                 onSelect={setSelected}

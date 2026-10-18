@@ -195,7 +195,7 @@ const STEPS: Step[] = [
           Nelle <strong>giornate speciali</strong> i punti valgono doppio: tieni gli avvisi attivi!
         </Point>
         <Point icon={<Users className="h-4 w-4" />}>
-          Aggiungi gli amici per vederli sulla mappa e scrivergli.
+          Aggiungi gli amici per scrivergli e sfidarli nelle missioni co-op.
         </Point>
       </ul>
     ),

@@ -422,50 +422,6 @@ export async function rateRock(rockId: string, userId: string, stars: number) {
   if (error) throw new Error(error.message);
 }
 
-export type FriendLocation = {
-  id: string;
-  nickname: string;
-  lat: number;
-  lng: number;
-  updated_at: string | null;
-};
-
-/** Salva la mia posizione attuale (visibile solo ai miei amici). */
-export async function saveMyLocation(userId: string, lat: number, lng: number) {
-  const { error } = await supabase
-    .from("player_locations")
-    .upsert({ user_id: userId, lat, lng }, { onConflict: "user_id" });
-  if (error) throw new Error(error.message);
-}
-
-/** Posizioni degli amici che hanno condiviso il GPS (il database mostra solo quelle degli amici). */
-export async function fetchFriendLocations(userId: string): Promise<FriendLocation[]> {
-  const links = await fetchLinks(userId);
-  const ids = [
-    ...new Set(
-      links
-        .filter((l) => l.status === "accepted")
-        .map((l) => (l.user_id === userId ? l.friend_id : l.user_id)),
-    ),
-  ];
-  if (!ids.length) return [];
-  const [{ data: spots, error }, profs] = await Promise.all([
-    supabase.from("player_locations").select("user_id,lat,lng,updated_at").in("user_id", ids),
-    profilesByIds(ids),
-  ]);
-  if (error) throw new Error(error.message);
-  const names = new Map(profs.map((p) => [p.id, p.nickname]));
-  return (spots ?? [])
-    .filter((s) => names.has(s.user_id))
-    .map((s) => ({
-      id: s.user_id,
-      nickname: names.get(s.user_id)!,
-      lat: s.lat,
-      lng: s.lng,
-      updated_at: s.updated_at,
-    }));
-}
-
 // ---------------------------------------------------------------------------
 // Profilo, negozio e missioni co-op
 // ---------------------------------------------------------------------------

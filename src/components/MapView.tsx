@@ -1,16 +1,15 @@
 import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
-import type { RockRow, FriendLocation } from "@/lib/api";
+import type { RockRow } from "@/lib/api";
 import { addBasemap } from "@/lib/basemap";
 import { ADMIN_HOLD_MS } from "@/lib/rules";
-import { avatarGradient, initialOf, rockPinHtml } from "@/lib/pins";
+import { rockPinHtml } from "@/lib/pins";
 
 type Props = {
   rocks: RockRow[];
   me: { lat: number; lng: number };
   foundIds: string[];
   onSelect: (rock: RockRow) => void;
-  friends?: FriendLocation[];
   /** sassi obiettivo di una missione co-op in corso (evidenziati) */
   targetIds?: string[];
   onVisibleCount?: (count: number) => void;
@@ -106,21 +105,6 @@ export default function MapView(props: Props) {
       interactive: false, // non deve coprire i sassi che stanno nella stessa posizione
       zIndexOffset: -1000,
     }).addTo(layer);
-
-    const esc = (t: string) => t.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-    for (const f of dataRef.current.friends ?? []) {
-      L.marker([f.lat, f.lng], {
-        icon: L.divIcon({
-          className: "",
-          html: `<div class="friend-pin"><span class="friend-avatar" style="background:${avatarGradient(f.nickname)}">${esc(initialOf(f.nickname))}</span><span class="friend-name">${esc(f.nickname)}</span></div>`,
-          iconSize: [80, 62],
-          iconAnchor: [40, 20],
-        }),
-        zIndexOffset: 500,
-      })
-        .addTo(layer)
-        .bindPopup(`<strong>@${esc(f.nickname)}</strong><br/>In esplorazione!`);
-    }
 
     const bounds = map.getBounds();
     const visible = list.filter((rock) => bounds.contains([rock.lat, rock.lng]));
@@ -236,7 +220,7 @@ export default function MapView(props: Props) {
 
   useEffect(() => {
     render.current();
-  }, [rocks, foundIds, me.lat, me.lng, props.friends, props.targetIds, props.armedId]);
+  }, [rocks, foundIds, me.lat, me.lng, props.targetIds, props.armedId]);
 
   // Il dito lascia lo schermo (ovunque) o si sposta di più di qualche pixel: niente spostamento.
   useEffect(() => {
