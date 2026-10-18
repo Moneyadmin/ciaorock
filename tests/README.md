@@ -9,3 +9,5 @@
   avvertenze: solo su un Postgres di prova.
 - `features-test.sql`: bonus creatore, bonus giornaliero, negozio (saldo separato dalla classifica),
   profilo protetto e missioni co-op (inviti, timer, raddoppio, scadenza).
+- `premi-test.sql`: badge e targhette creati dall'admin (solo l'admin li crea, periodo di disponibilità,
+  acquisto o sblocco automatico a condizione, avviso una volta sola, premi posseduti non cancellabili).

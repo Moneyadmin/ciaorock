@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { createRock } from "@/lib/api";
+import { announceRewards } from "@/lib/rewards";
 import { clearDraft, enqueue, readDraft, saveDraft } from "@/lib/offline";
 import { DEFAULT_POSITION, compressImage, distanceMeters, getPrecisePosition } from "@/lib/rockdex";
 import { HIDE_RADIUS_M } from "@/lib/rules";
@@ -224,6 +225,7 @@ function CreatePage() {
         setDone("Sasso salvato offline: verrà pubblicato al ritorno del segnale.");
       } else {
         const id = await createRock({ ...payload, token });
+        void announceRewards();
         setDone("Sasso nascosto! L'AI sta valutando il nascondiglio…");
         try {
           const r = await score({ data: { rockId: id } });

@@ -34,6 +34,7 @@ import {
 } from "@/lib/api";
 import { adminMoveRock } from "@/lib/admin.functions";
 import { importLegacyRocks } from "@/lib/legacy";
+import { announceRewards } from "@/lib/rewards";
 import { enqueue, readQueue } from "@/lib/offline";
 import {
   DEFAULT_POSITION,
@@ -47,7 +48,7 @@ import { saveMyLocation, fetchFriendLocations, type FriendLocation } from "@/lib
 import { useSession } from "@/lib/useSession";
 import { avatarGradient, initialOf } from "@/lib/pins";
 import { matchRockPhoto } from "@/lib/vision.functions";
-import { FIND_RADIUS_M, HIDE_RADIUS_M } from "@/lib/rules";
+import { ADMIN_HOLD_MS, FIND_RADIUS_M, HIDE_RADIUS_M } from "@/lib/rules";
 
 const MapView = lazy(() => import("@/components/MapView"));
 const LocationPicker = lazy(() => import("@/components/LocationPicker"));
@@ -91,6 +92,10 @@ function MapPage() {
   const [pending, setPending] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
   const [bonus, setBonus] = useState(1);
+  // Admin: sasso da confermare dopo la pressione lunga, e sasso in attesa della nuova posizione.
+  const [askMove, setAskMove] = useState<RockRow | null>(null);
+  const [moving, setMoving] = useState<RockRow | null>(null);
+  const askOpenedAt = useRef(0);
 
   useEffect(() => setMounted(true), []);
   const [tutorial, setTutorial] = useState(false);
@@ -259,8 +264,18 @@ function MapPage() {
 
   const nickname = profile?.nickname ?? "";
 
+  useEffect(() => {
+    if (!moving) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMoving(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [moving]);
+
   const handleAdminMove = useCallback(
     async (rock: RockRow, lat: number, lng: number) => {
+      setMoving(null);
       try {
         await adminMoveRockFn({ data: { rockId: rock.id, lat, lng } });
         setToast(`"${rock.name}" spostato nella nuova posizione ✅`);
@@ -287,17 +302,21 @@ function MapPage() {
                 foundIds={foundIds}
                 onSelect={setSelected}
                 onVisibleCount={setVisible}
-                adminMove={admin}
+                adminMove={admin && !askMove}
+                armedId={moving?.id ?? null}
                 onAdminMove={handleAdminMove}
                 onAdminHoldStart={() =>
-                  setToast("Tieni premuto 5 secondi per sbloccare lo spostamento del sasso…")
-                }
-                onAdminHoldCancel={() => setToast(null)}
-                onAdminArmed={(rock) =>
                   setToast(
-                    `"${rock.name}" sbloccato: ora tocca il punto della mappa dove spostarlo 👆`,
+                    `Admin: continua a tenere premuto ${ADMIN_HOLD_MS / 1000} secondi per spostare il sasso…`,
                   )
                 }
+                onAdminHoldCancel={() => setToast(null)}
+                onAdminHoldDone={(rock) => {
+                  setToast(null);
+                  setSelected(null);
+                  askOpenedAt.current = Date.now();
+                  setAskMove(rock);
+                }}
               />
             </Suspense>
           ) : (
@@ -365,6 +384,70 @@ function MapPage() {
           )}
         </div>
 
+        {moving && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[950] p-3 pb-[calc(env(safe-area-inset-bottom)+6.5rem)]">
+            <div className="pointer-events-auto mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-ink px-4 py-3 text-ink-foreground shadow-lift animate-in fade-in slide-in-from-bottom-2">
+              <p className="flex-1 text-xs font-bold">
+                Tocca il punto della mappa dove spostare “{moving.name}”
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setMoving(null);
+                  setToast("Spostamento annullato: il sasso è rimasto dov'era.");
+                }}
+                className="press shrink-0 rounded-xl bg-white/15 px-3.5 py-2 text-xs font-extrabold"
+              >
+                Esci senza spostare
+              </button>
+            </div>
+          </div>
+        )}
+
+        {askMove && (
+          <div
+            className="fixed inset-0 z-[1070] grid place-items-center bg-ink/40 p-6 backdrop-blur-[2px] animate-in fade-in"
+            onClick={() => {
+              // il dito che si stacca dalla pressione lunga non deve chiudere subito la domanda
+              if (Date.now() - askOpenedAt.current > 700) setAskMove(null);
+            }}
+          >
+            <div
+              role="alertdialog"
+              aria-labelledby="move-title"
+              className="w-full max-w-sm rounded-[1.75rem] bg-card p-5 shadow-lift"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="move-title" className="text-xl leading-tight">
+                Vuoi spostare questo sasso?
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                “{askMove.name}”: dopo la conferma tocca la mappa nel punto in cui metterlo. Puoi
+                sempre uscire senza spostarlo.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setAskMove(null)}
+                  className="press flex-1 rounded-2xl bg-muted py-3 text-sm font-extrabold text-muted-foreground"
+                >
+                  No
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMoving(askMove);
+                    setAskMove(null);
+                  }}
+                  className="press bg-brand flex-[1.4] rounded-2xl py-3 text-sm font-extrabold text-white shadow-glow"
+                >
+                  Sì, spostalo
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {selected && (
           <RockSheet
             rock={selected}
@@ -377,6 +460,7 @@ function MapPage() {
               setToast(message);
               setSelected(null);
               void reload();
+              void announceRewards();
             }}
           />
         )}

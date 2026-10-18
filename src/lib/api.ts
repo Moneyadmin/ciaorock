@@ -498,22 +498,92 @@ export async function fetchWallet(): Promise<Wallet> {
   return data?.[0] ?? { earned: 0, spent: 0, balance: 0 };
 }
 
+export type UnlockRule = {
+  type: "finds" | "creates" | "points" | "streak" | "coop" | "rock" | "city";
+  n: number;
+  ref?: string;
+};
+
+/** Badge e targhette (anche creati dall'admin). price null = non si compra; unlock = condizione. */
 export type ShopItem = {
   id: string;
+  kind: "plate" | "badge";
   label: string;
   description: string;
-  price: number;
+  icon: string;
+  price: number | null;
+  style: string;
+  unlock: UnlockRule | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  active: boolean;
+  sort: number;
+};
+
+const SHOP_COLUMNS =
+  "id,kind,label,description,icon,price,style,unlock,starts_at,ends_at,active,sort";
+
+/** Tutto il catalogo, anche i premi scaduti o disattivati: servono a mostrare quelli posseduti. */
+export async function fetchShopItems(): Promise<ShopItem[]> {
+  const { data, error } = await supabase.from("shop_items").select(SHOP_COLUMNS).order("sort");
+  if (!error) return (data ?? []) as unknown as ShopItem[];
+  // database non ancora aggiornato (migrazione premi_admin): solo le targhette di prima
+  const old = await supabase
+    .from("shop_items")
+    .select("id,label,description,price,style,active,sort")
+    .order("sort");
+  if (old.error) throw new Error(error.message);
+  return (old.data ?? []).map((i) => ({
+    ...i,
+    kind: "plate" as const,
+    icon: "🏅",
+    unlock: null,
+    starts_at: null,
+    ends_at: null,
+  }));
+}
+
+export type ShopItemInput = Omit<ShopItem, "sort"> & { sort?: number };
+
+/** Solo admin (lo verifica il database). */
+export async function saveShopItem(item: ShopItemInput) {
+  const { error } = await supabase.from("shop_items").upsert(item as never);
+  if (error) throw rpcError(error);
+}
+
+export async function deleteShopItem(id: string) {
+  const { error } = await supabase.from("shop_items").delete().eq("id", id);
+  if (error) throw rpcError(error);
+}
+
+export type RewardUnlocked = {
+  id: string;
+  kind: string;
+  label: string;
+  icon: string;
   style: string;
 };
 
-export async function fetchShopItems(): Promise<ShopItem[]> {
-  const { data, error } = await supabase
-    .from("shop_items")
-    .select("id,label,description,price,style")
-    .eq("active", true)
-    .order("sort");
-  if (error) throw new Error(error.message);
+/** Assegna i premi a condizione raggiunti e restituisce quelli non ancora annunciati. */
+export async function claimRewards(): Promise<RewardUnlocked[]> {
+  const { data, error } = await supabase.rpc("claim_rewards");
+  if (error) throw rpcError(error);
   return data ?? [];
+}
+
+export async function fetchRewardProgress(): Promise<
+  Map<string, { progress: number; goal: number }>
+> {
+  const { data, error } = await supabase.rpc("my_reward_progress");
+  if (error) throw rpcError(error);
+  return new Map((data ?? []).map((r) => [r.item_id, { progress: r.progress, goal: r.goal }]));
+}
+
+/** Badge speciali (creati dall'admin) di un giocatore qualsiasi. */
+export async function fetchSpecialBadges(userId: string): Promise<string[]> {
+  const { data, error } = await supabase.rpc("user_special_badges", { _uid: userId });
+  if (error) throw rpcError(error);
+  return (data ?? []).map((r) => r.item_id);
 }
 
 export async function fetchMyPurchases(userId: string): Promise<string[]> {

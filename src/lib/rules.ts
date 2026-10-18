@@ -22,3 +22,6 @@ export function metersBetween(a: { lat: number; lng: number }, b: { lat: number;
     Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
 }
+
+/** Admin: quanto tenere premuto un sasso sulla mappa prima che venga chiesto se spostarlo. */
+export const ADMIN_HOLD_MS = 8000;

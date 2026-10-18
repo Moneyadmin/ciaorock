@@ -22,6 +22,7 @@ import {
   addFriend,
   countCreated,
   fetchFindsFor,
+  fetchSpecialBadges,
   fetchFriendState,
   acceptFriend,
   removeFriend,
@@ -334,8 +335,14 @@ function ProfileSheet({
     },
   });
 
+  const specialQuery = useQuery({
+    queryKey: ["special-badges", person.id],
+    queryFn: () => fetchSpecialBadges(person.id),
+  });
+
   const finds = statsQuery.data?.finds ?? [];
   const created = statsQuery.data?.created ?? 0;
+  const specials = (specialQuery.data ?? []).map((id) => byId.get(id)).filter((b) => b != null);
   const earned = earnedBadgeIds({
     created,
     found: finds.length,
@@ -396,7 +403,7 @@ function ProfileSheet({
           {[
             ["Trovati", finds.length],
             ["Creati", created],
-            ["Badge", earned.length],
+            ["Badge", earned.length + specials.length],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl bg-muted p-3">
               <p className="font-display text-2xl">{value}</p>
@@ -406,6 +413,22 @@ function ProfileSheet({
             </div>
           ))}
         </div>
+
+        {specials.length > 0 && (
+          <div className="mt-5">
+            <h3 className="text-lg">Speciali</h3>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {specials.map((badge) => (
+                <span
+                  key={badge.id}
+                  className="bg-brand flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-extrabold text-white shadow-glow"
+                >
+                  {badge.icon} {badge.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {categories.map((category) => {
           const unlockedInCategory = BADGES.filter(
@@ -429,7 +452,7 @@ function ProfileSheet({
           );
         })}
 
-        {earned.length === 0 && !statsQuery.isLoading && (
+        {earned.length + specials.length === 0 && !statsQuery.isLoading && (
           <p className="mt-5 text-sm text-muted-foreground">Nessun traguardo sbloccato per ora.</p>
         )}
       </div>

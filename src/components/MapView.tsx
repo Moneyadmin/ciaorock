@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import "leaflet/dist/leaflet.css";
 import type { RockRow, FriendLocation } from "@/lib/api";
 import { addBasemap } from "@/lib/basemap";
+import { ADMIN_HOLD_MS } from "@/lib/rules";
 import { avatarGradient, initialOf, rockPinHtml } from "@/lib/pins";
 
 type Props = {
@@ -13,12 +14,16 @@ type Props = {
   /** sassi obiettivo di una missione co-op in corso (evidenziati) */
   targetIds?: string[];
   onVisibleCount?: (count: number) => void;
-  /** Admin: tenere premuto un sasso 5 secondi lo "sblocca", poi si tocca la mappa. */
+  /**
+   * Admin: tenere premuto un sasso per ADMIN_HOLD_MS chiama onAdminHoldDone (la pagina chiede
+   * conferma); quando la pagina passa armedId, il prossimo tocco sulla mappa chiama onAdminMove.
+   */
   adminMove?: boolean;
+  armedId?: string | null;
   onAdminMove?: (rock: RockRow, lat: number, lng: number) => void;
   onAdminHoldStart?: (rock: RockRow) => void;
   onAdminHoldCancel?: () => void;
-  onAdminArmed?: (rock: RockRow) => void;
+  onAdminHoldDone?: (rock: RockRow) => void;
 };
 
 type Cluster = { lat: number; lng: number; rocks: RockRow[] };
@@ -57,8 +62,25 @@ export default function MapView(props: Props) {
   const layerRef = useRef<import("leaflet").LayerGroup | null>(null);
   const leafletRef = useRef<typeof import("leaflet") | null>(null);
   const dataRef = useRef(props);
-  const armedRef = useRef<string | null>(null);
+  const holdRef = useRef<{
+    timers: ReturnType<typeof setTimeout>[];
+    x: number;
+    y: number;
+    hinted: boolean;
+  } | null>(null);
+  const holdDoneAt = useRef(0);
   dataRef.current = props;
+
+  // Annulla la pressione lunga in corso. Il rilascio del dito si ascolta su tutta la finestra:
+  // i pin vengono ridisegnati spesso (es. a ogni aggiornamento GPS) e il "pointerup" sul pin
+  // vecchio non arriverebbe mai, lasciando partire lo spostamento da solo.
+  const cancelHold = useRef(() => {
+    const hold = holdRef.current;
+    if (!hold) return;
+    hold.timers.forEach(clearTimeout);
+    holdRef.current = null;
+    if (hold.hinted) dataRef.current.onAdminHoldCancel?.();
+  });
 
   const render = useRef(() => {
     const L = leafletRef.current;
@@ -72,9 +94,9 @@ export default function MapView(props: Props) {
       onSelect: select,
       onVisibleCount: report,
       adminMove,
+      armedId,
       onAdminHoldStart,
-      onAdminHoldCancel,
-      onAdminArmed,
+      onAdminHoldDone,
     } = dataRef.current;
 
     layer.clearLayers();
@@ -109,7 +131,7 @@ export default function MapView(props: Props) {
       if (cluster.rocks.length === 1) {
         const rock = cluster.rocks[0]!;
         const isFound = found.includes(rock.id);
-        const armed = armedRef.current === rock.id;
+        const armed = armedId === rock.id;
         const marker = L.marker([rock.lat, rock.lng], {
           icon: L.divIcon({
             className: "",
@@ -124,41 +146,36 @@ export default function MapView(props: Props) {
         }).addTo(layer);
 
         marker.on("click", () => {
-          if (armedRef.current) return; // in attesa del punto di destinazione
+          if (dataRef.current.armedId) return; // in attesa del punto di destinazione
+          if (Date.now() - holdDoneAt.current < 1000) return; // è il rilascio della pressione lunga
           select(rock);
         });
 
-        if (adminMove && !armedRef.current) {
+        if (adminMove && !armedId) {
           const el = marker.getElement();
-          let timer: ReturnType<typeof setTimeout> | null = null;
-
-          const stop = () => {
-            if (timer) clearTimeout(timer);
-            timer = null;
-          };
-          const begin = () => {
-            stop();
-            onAdminHoldStart?.(rock);
-            timer = setTimeout(() => {
-              timer = null;
-              armedRef.current = rock.id;
-              onAdminArmed?.(rock);
-              render.current();
-            }, 5000);
-          };
-          const cancel = () => {
-            if (timer) {
-              stop();
-              onAdminHoldCancel?.();
-            }
-          };
-
-          if (el) {
-            el.addEventListener("pointerdown", begin);
-            el.addEventListener("pointerup", cancel);
-            el.addEventListener("pointercancel", cancel);
-            el.addEventListener("pointerleave", cancel);
-          }
+          el?.addEventListener("pointerdown", (event) => {
+            if (!event.isPrimary) return;
+            cancelHold.current();
+            const hold = {
+              x: event.clientX,
+              y: event.clientY,
+              hinted: false,
+              timers: [] as ReturnType<typeof setTimeout>[],
+            };
+            // l'avviso compare solo se la pressione dura: un tocco normale apre la scheda e basta
+            hold.timers.push(
+              setTimeout(() => {
+                hold.hinted = true;
+                onAdminHoldStart?.(rock);
+              }, 800),
+              setTimeout(() => {
+                holdRef.current = null;
+                holdDoneAt.current = Date.now();
+                onAdminHoldDone?.(rock);
+              }, ADMIN_HOLD_MS),
+            );
+            holdRef.current = hold;
+          });
         }
       } else {
         L.marker([cluster.lat, cluster.lng], {
@@ -202,15 +219,12 @@ export default function MapView(props: Props) {
       mapRef.current = map;
       layerRef.current = L.layerGroup().addTo(map);
       map.on("zoomend moveend", () => render.current());
+      map.on("movestart zoomstart", () => cancelHold.current());
       map.on("click", (event: import("leaflet").LeafletMouseEvent) => {
-        const id = armedRef.current;
+        const id = dataRef.current.armedId;
         if (!id) return;
         const rock = dataRef.current.rocks.find((r) => r.id === id);
-        armedRef.current = null;
-        render.current();
-        if (rock) {
-          dataRef.current.onAdminMove?.(rock, event.latlng.lat, event.latlng.lng);
-        }
+        if (rock) dataRef.current.onAdminMove?.(rock, event.latlng.lat, event.latlng.lng);
       });
       render.current();
     })();
@@ -222,7 +236,28 @@ export default function MapView(props: Props) {
 
   useEffect(() => {
     render.current();
-  }, [rocks, foundIds, me.lat, me.lng, props.friends, props.targetIds]);
+  }, [rocks, foundIds, me.lat, me.lng, props.friends, props.targetIds, props.armedId]);
+
+  // Il dito lascia lo schermo (ovunque) o si sposta di più di qualche pixel: niente spostamento.
+  useEffect(() => {
+    const cancel = cancelHold.current;
+    const up = () => cancel();
+    const move = (event: PointerEvent) => {
+      const hold = holdRef.current;
+      if (hold && Math.hypot(event.clientX - hold.x, event.clientY - hold.y) > 12) {
+        cancel();
+      }
+    };
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    window.addEventListener("pointermove", move);
+    return () => {
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+      window.removeEventListener("pointermove", move);
+      cancel();
+    };
+  }, []);
 
   useEffect(() => {
     return () => {

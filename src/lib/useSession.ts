@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { ProfileRow } from "@/lib/api";
+import { announceRewards } from "@/lib/rewards";
 
 /** Keep the daily login streak fresh (used by the "SERIE" badges): computed by the database. */
 async function touchStreak(profile: ProfileRow & { last_login_date: string | null }) {
@@ -72,6 +73,7 @@ export function useSession(): SessionState {
     if (row) {
       setBanned(Boolean((row as { banned?: boolean }).banned));
       const fresh = await touchStreak(row as ProfileRow & { last_login_date: string | null });
+      void announceRewards(); // dopo la serie: un badge "N giorni di fila" può sbloccarsi ora
       setProfile({
         id: fresh.id,
         nickname: fresh.nickname,

@@ -279,18 +279,24 @@ export type Database = {
           created_at: string;
           item_id: string;
           price: number;
+          seen: boolean;
+          source: string;
           user_id: string;
         };
         Insert: {
           created_at?: string;
           item_id: string;
           price: number;
+          seen?: boolean;
+          source?: string;
           user_id: string;
         };
         Update: {
           created_at?: string;
           item_id?: string;
           price?: number;
+          seen?: boolean;
+          source?: string;
           user_id?: string;
         };
         Relationships: [];
@@ -298,33 +304,48 @@ export type Database = {
       shop_items: {
         Row: {
           active: boolean;
+          created_at: string;
           description: string;
+          ends_at: string | null;
+          icon: string;
           id: string;
           kind: string;
           label: string;
-          price: number;
+          price: number | null;
           sort: number;
+          starts_at: string | null;
           style: string;
+          unlock: Json | null;
         };
         Insert: {
           active?: boolean;
+          created_at?: string;
           description?: string;
+          ends_at?: string | null;
+          icon?: string;
           id: string;
           kind?: string;
           label: string;
-          price: number;
+          price?: number | null;
           sort?: number;
+          starts_at?: string | null;
           style?: string;
+          unlock?: Json | null;
         };
         Update: {
           active?: boolean;
+          created_at?: string;
           description?: string;
+          ends_at?: string | null;
+          icon?: string;
           id?: string;
           kind?: string;
           label?: string;
-          price?: number;
+          price?: number | null;
           sort?: number;
+          starts_at?: string | null;
           style?: string;
+          unlock?: Json | null;
         };
         Relationships: [];
       };
@@ -583,6 +604,15 @@ export type Database = {
         }[];
       };
       my_wallet: { Args: never; Returns: { balance: number; earned: number; spent: number }[] };
+      claim_rewards: {
+        Args: never;
+        Returns: { icon: string; id: string; kind: string; label: string; style: string }[];
+      };
+      my_reward_progress: {
+        Args: never;
+        Returns: { goal: number; item_id: string; progress: number }[];
+      };
+      user_special_badges: { Args: { _uid: string }; Returns: { item_id: string }[] };
       tier_points: { Args: { _tier: string }; Returns: number };
     };
     Enums: {

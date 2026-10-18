@@ -108,7 +108,9 @@ function ProfilePage() {
 
   if (!profile) return <AppShell title="Il mio profilo">{null}</AppShell>;
   const plate = profile.plate_id ? byId.get(profile.plate_id) : null;
-  const myPlates = (owned.data ?? []).map((id) => byId.get(id)).filter((p) => p != null);
+  const myPlates = (owned.data ?? [])
+    .map((id) => byId.get(id))
+    .filter((p): p is NonNullable<typeof p> => p != null && p.kind === "plate");
 
   return (
     <AppShell title="Il mio profilo" subtitle={`@${profile.nickname}`}>

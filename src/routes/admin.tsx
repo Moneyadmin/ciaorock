@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { RewardsAdmin } from "@/components/RewardsAdmin";
+import { ADMIN_HOLD_MS } from "@/lib/rules";
 import { AppShell } from "@/components/AppShell";
 import { useSession } from "@/lib/useSession";
 import {
@@ -197,9 +199,9 @@ function AdminTools() {
   >([]);
   const [annTitle, setAnnTitle] = useState("");
   const [annBody, setAnnBody] = useState("");
-  const [tab, setTab] = useState<"sassi" | "punti" | "giocatori" | "giorni" | "avvisi" | "cestino">(
-    "sassi",
-  );
+  const [tab, setTab] = useState<
+    "sassi" | "punti" | "giocatori" | "premi" | "giorni" | "avvisi" | "cestino"
+  >("sassi");
   const [newDay, setNewDay] = useState("");
   const [newMult, setNewMult] = useState(2);
 
@@ -239,18 +241,20 @@ function AdminTools() {
 
   return (
     <div className="space-y-4 pb-24">
-      <div className="flex rounded-2xl bg-muted p-1 text-sm font-extrabold">
-        {(["sassi", "punti", "giocatori", "giorni", "avvisi", "cestino"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            className={`flex-1 rounded-xl py-2 text-xs capitalize ${
-              tab === t ? "bg-ink text-ink-foreground shadow-pebble" : "text-muted-foreground"
-            }`}
-          >
-            {t}
-          </button>
-        ))}
+      <div className="-mx-1 flex gap-0.5 overflow-x-auto rounded-2xl bg-muted p-1 text-sm font-extrabold">
+        {(["sassi", "punti", "giocatori", "premi", "giorni", "avvisi", "cestino"] as const).map(
+          (t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`shrink-0 grow rounded-xl px-2.5 py-2 text-xs capitalize ${
+                tab === t ? "bg-ink text-ink-foreground shadow-pebble" : "text-muted-foreground"
+              }`}
+            >
+              {t}
+            </button>
+          ),
+        )}
       </div>
 
       {tab === "avvisi" && (
@@ -306,12 +310,15 @@ function AdminTools() {
 
       {tab === "sassi" && (
         <p className="pebble-card p-4 text-xs text-muted-foreground">
-          Sulla mappa puoi anche tenere premuto un sasso per 5 secondi e trascinarlo nella nuova
-          posizione. I sassi eliminati finiscono nel cestino e sono ripristinabili.
+          Sulla mappa puoi anche tenere premuto un sasso per {ADMIN_HOLD_MS / 1000} secondi: dopo la
+          conferma tocchi il punto dove spostarlo (o esci senza spostarlo). I sassi eliminati
+          finiscono nel cestino e sono ripristinabili.
         </p>
       )}
 
       {tab === "punti" && <RockPointsTable />}
+
+      {tab === "premi" && <RewardsAdmin />}
 
       {tab === "cestino" &&
         (trash.length === 0 ? (

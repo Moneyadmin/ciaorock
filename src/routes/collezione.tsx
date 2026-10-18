@@ -19,7 +19,9 @@ import { Avatar } from "@/components/Avatar";
 import { NotificationSettings } from "@/components/NotificationSettings";
 import { Tutorial } from "@/components/Tutorial";
 import { BADGES, CATEGORY_LABELS, earnedBadgeIds, type BadgeCategory } from "@/lib/badges";
-import { countCreated, fetchMyFinds } from "@/lib/api";
+import { countCreated, fetchMyFinds, fetchSpecialBadges, fetchRocks } from "@/lib/api";
+import { describeUnlock, isAvailable, periodLabel } from "@/lib/rewards";
+import { useShopItems } from "@/lib/useShop";
 import { useSession } from "@/lib/useSession";
 
 export const Route = createFileRoute("/collezione")({
@@ -67,6 +69,23 @@ function CollectionPage() {
 
   const finds = findsQuery.data ?? [];
   const created = createdQuery.data ?? 0;
+
+  // Badge speciali creati dall'admin: quelli posseduti (anche scaduti) e quelli ancora ottenibili.
+  const { items } = useShopItems();
+  const specialQuery = useQuery({
+    queryKey: ["special-badges", userId],
+    queryFn: () => fetchSpecialBadges(userId!),
+    enabled: Boolean(userId),
+  });
+  const specialOwned = new Set(specialQuery.data ?? []);
+  const specials = items.filter(
+    (i) => i.kind === "badge" && (specialOwned.has(i.id) || isAvailable(i)),
+  );
+  const rocksQuery = useQuery({
+    queryKey: ["rocks"],
+    queryFn: fetchRocks,
+    enabled: specials.some((i) => i.unlock?.type === "rock" && !specialOwned.has(i.id)),
+  });
 
   const earned = useMemo(
     () =>
@@ -134,7 +153,7 @@ function CollectionPage() {
         />
         <Stat
           label="Badge"
-          value={earned.length}
+          value={earned.length + specialOwned.size}
           icon={<Award className="h-4 w-4" />}
           tone="bg-sun text-ink"
         />
@@ -163,7 +182,7 @@ function CollectionPage() {
           >
             {t === "collezione"
               ? `Collezione · ${finds.length}`
-              : `Traguardi · ${earned.length}/${BADGES.length}`}
+              : `Traguardi · ${earned.length + specialOwned.size}`}
           </button>
         ))}
       </div>
@@ -218,6 +237,65 @@ function CollectionPage() {
         </div>
       ) : (
         <div className="mt-4 space-y-6">
+          {specials.length > 0 && (
+            <section>
+              <div className="flex items-baseline justify-between">
+                <h2 className="text-xl">Speciali</h2>
+                <span className="text-xs font-extrabold text-muted-foreground">
+                  {specials.filter((b) => specialOwned.has(b.id)).length}/{specials.length}
+                </span>
+              </div>
+              <div className="mt-2.5 grid grid-cols-3 gap-2.5">
+                {specials.map((badge) => {
+                  const unlocked = specialOwned.has(badge.id);
+                  const how = badge.unlock
+                    ? describeUnlock(
+                        badge.unlock,
+                        rocksQuery.data?.find((r) => r.id === badge.unlock?.ref)?.name,
+                      )
+                    : `Nel negozio: ${badge.price?.toLocaleString("it-IT")} punti`;
+                  const period = periodLabel(badge);
+                  return (
+                    <article
+                      key={badge.id}
+                      title={badge.description || how}
+                      className={`relative flex flex-col items-center rounded-[1.3rem] p-2.5 pb-3 text-center ${
+                        unlocked ? "bg-card shadow-pebble ring-1 ring-border" : "bg-muted"
+                      }`}
+                    >
+                      <span
+                        className={`grid h-14 w-14 place-items-center rounded-[1.1rem] text-[1.7rem] ${
+                          unlocked ? "bg-brand shadow-glow" : "bg-border/70 grayscale"
+                        }`}
+                      >
+                        <span className={unlocked ? "" : "opacity-35"}>{badge.icon}</span>
+                      </span>
+                      {!unlocked && (
+                        <span className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-card text-muted-foreground">
+                          <Lock className="h-3 w-3" strokeWidth={2.8} />
+                        </span>
+                      )}
+                      <p
+                        className={`mt-2 line-clamp-2 text-[11px] font-extrabold leading-tight ${
+                          unlocked ? "text-foreground" : "text-muted-foreground"
+                        }`}
+                      >
+                        {badge.label}
+                      </p>
+                      <p className="mt-0.5 line-clamp-2 text-[10px] leading-tight text-muted-foreground">
+                        {unlocked ? badge.description : how}
+                      </p>
+                      {!unlocked && period && (
+                        <p className="mt-1 rounded-full bg-sun/30 px-1.5 py-0.5 text-[9px] font-extrabold leading-tight">
+                          ⏳ {period}
+                        </p>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          )}
           {grouped.map(([category, badges]) => {
             const got = badges.filter((b) => earned.includes(b.id)).length;
             return (
