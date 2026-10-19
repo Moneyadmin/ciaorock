@@ -48,12 +48,14 @@ function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
-  /** accesso senza password: link o codice a 6 cifre via email */
+  /** accesso senza password: link o codice via email (6–10 cifre, dipende da Supabase) */
   const [otp, setOtp] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
   const [code, setCode] = useState("");
   /** dopo una password sbagliata mostriamo subito il pulsante per reimpostarla */
   const [wrongPassword, setWrongPassword] = useState(false);
+  /** registrazione in attesa di conferma: permette di rimandare l'email */
+  const [pendingSignup, setPendingSignup] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && userId && profile?.nickname) navigate({ to: "/" });
@@ -100,8 +102,19 @@ function AuthPage() {
           );
           return;
         }
+        // Email già registrata: per non rivelare chi è iscritto Supabase risponde "ok" ma non
+        // manda nulla e restituisce un utente senza identità.
+        if (data.user && (data.user.identities?.length ?? 0) === 0) {
+          setMode("login");
+          setWrongPassword(true);
+          setError(
+            "Questa email ha già un account: accedi con la password, oppure usa “Accedi senza password” o “Password dimenticata”.",
+          );
+          return;
+        }
         // Con la conferma email attiva non c'è ancora una sessione: va confermato il link.
         if (!data.session) {
+          setPendingSignup(mail);
           setInfo(
             `Ti abbiamo mandato un'email a ${mail}: apri il link per confermare l'account, poi torna qui e accedi. Controlla anche lo spam.`,
           );
@@ -136,8 +149,32 @@ function AuthPage() {
       }
       setOtpSent(true);
       setInfo(
-        `Ti abbiamo scritto a ${mail}: tocca il link nell'email oppure scrivi il codice a 6 cifre che trovi nel messaggio. Controlla anche lo spam.`,
+        `Ti abbiamo scritto a ${mail}: tocca il link nell'email oppure scrivi il codice che trovi nel messaggio. Controlla anche lo spam.`,
       );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function resendSignup() {
+    if (!pendingSignup) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const { error: err } = await supabase.auth.resend({
+        type: "signup",
+        email: pendingSignup,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (err) {
+        setError(
+          /rate limit|seconds/i.test(err.message)
+            ? "Hai già chiesto un'email da poco: aspetta un minuto e riprova."
+            : err.message,
+        );
+        return;
+      }
+      setInfo(`Email di conferma rimandata a ${pendingSignup}. Controlla anche lo spam.`);
     } finally {
       setBusy(false);
     }
@@ -146,7 +183,9 @@ function AuthPage() {
   async function verifyCode() {
     setError(null);
     const token = code.replace(/\D/g, "");
-    if (token.length !== 6) return setError("Il codice ha 6 cifre.");
+    if (token.length < 6 || token.length > 10) {
+      return setError("Scrivi tutte le cifre del codice che trovi nell'email.");
+    }
     setBusy(true);
     try {
       const { error: err } = await supabase.auth.verifyOtp({
@@ -303,9 +342,9 @@ function AuthPage() {
                 <Field
                   label="Codice dall'email"
                   value={code}
-                  onChange={(v) => setCode(v.replace(/\D/g, "").slice(0, 6))}
+                  onChange={(v) => setCode(v.replace(/\D/g, "").slice(0, 10))}
                   type="text"
-                  placeholder="123456"
+                  placeholder="12345678"
                   inputMode="numeric"
                   autoComplete="one-time-code"
                 />
@@ -397,6 +436,16 @@ function AuthPage() {
                 <p className="rounded-xl bg-moss/15 px-3 py-2 text-sm font-semibold text-foreground">
                   {info}
                 </p>
+              )}
+              {pendingSignup && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void resendSignup()}
+                  className="press w-full text-center text-sm font-extrabold text-primary"
+                >
+                  Non è arrivata? Rimanda l'email di conferma
+                </button>
               )}
               <PrimaryButton disabled={busy}>
                 {mode === "login" ? "Accedi" : "Crea account"}
