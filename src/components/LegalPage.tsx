@@ -3,14 +3,14 @@ import type { ReactNode } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/Logo";
 
-/** Impaginazione delle pagine legali: leggibili anche senza aver fatto l'accesso. */
+/** Impaginazione di regolamento e pagine legali: leggibili anche senza aver fatto l'accesso. */
 export function LegalPage({
   title,
   updated,
   children,
 }: {
   title: string;
-  updated: string;
+  updated?: string;
   children: ReactNode;
 }) {
   return (
@@ -27,9 +27,15 @@ export function LegalPage({
           <Logo className="h-10 w-10" />
         </div>
         <h1 className="mt-6 text-4xl leading-tight">{title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Ultimo aggiornamento: {updated}</p>
+        {updated && (
+          <p className="mt-1 text-sm text-muted-foreground">Ultimo aggiornamento: {updated}</p>
+        )}
         <div className="legal mt-6 space-y-4 text-[15px] leading-relaxed">{children}</div>
         <p className="mt-10 text-sm text-muted-foreground">
+          <Link to="/come-si-gioca" className="font-bold underline">
+            Come si gioca
+          </Link>{" "}
+          ·{" "}
           <Link to="/privacy" className="font-bold underline">
             Informativa privacy
           </Link>{" "}

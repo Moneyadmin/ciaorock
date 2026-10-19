@@ -244,6 +244,13 @@ const STEPS: Step[] = [
         <li>• Non entrare in proprietà private e non nascondere sassi in punti pericolosi.</li>
         <li>• Guarda dove cammini, non lo schermo, quando attraversi la strada.</li>
         <li>• Non condividere indirizzo, scuola o numero di telefono in chat.</li>
+        <li>
+          • Tutte le regole sono in{" "}
+          <a href="/come-si-gioca" className="font-bold underline">
+            Come si gioca
+          </a>
+          , anche dal tuo profilo.
+        </li>
       </ul>
     ),
   },

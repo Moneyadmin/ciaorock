@@ -431,6 +431,10 @@ function AuthPage() {
       )}
       <p className="relative mt-5 text-center text-xs text-muted-foreground">
         Ciao Rock è per chi ha almeno 14 anni ·{" "}
+        <Link to="/come-si-gioca" className="font-bold underline">
+          Come si gioca
+        </Link>{" "}
+        ·{" "}
         <Link to="/privacy" className="font-bold underline">
           Privacy
         </Link>{" "}

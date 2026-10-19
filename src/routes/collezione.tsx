@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import {
+  BookOpen,
   Award,
   Flame,
   Gem,
@@ -368,6 +369,13 @@ function CollectionPage() {
       >
         <GraduationCap className="h-4 w-4" /> Rivedi il tutorial
       </button>
+
+      <Link
+        to="/come-si-gioca"
+        className="press mt-3 flex w-full items-center justify-center gap-2 rounded-2xl bg-secondary py-3.5 text-sm font-extrabold text-secondary-foreground"
+      >
+        <BookOpen className="h-4 w-4" /> Come si gioca: tutte le regole
+      </Link>
 
       <button
         onClick={logout}

@@ -15,6 +15,7 @@ import { Route as AmiciRouteImport } from './routes/amici'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ClassificaRouteImport } from './routes/classifica'
 import { Route as CollezioneRouteImport } from './routes/collezione'
+import { Route as ComeSiGiocaRouteImport } from './routes/come-si-gioca'
 import { Route as CreaRouteImport } from './routes/crea'
 import { Route as MessaggiRouteImport } from './routes/messaggi'
 import { Route as NegozioRouteImport } from './routes/negozio'
@@ -53,6 +54,11 @@ const ClassificaRoute = ClassificaRouteImport.update({
 const CollezioneRoute = CollezioneRouteImport.update({
   id: '/collezione',
   path: '/collezione',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComeSiGiocaRoute = ComeSiGiocaRouteImport.update({
+  id: '/come-si-gioca',
+  path: '/come-si-gioca',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CreaRoute = CreaRouteImport.update({
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/classifica': typeof ClassificaRoute
   '/collezione': typeof CollezioneRoute
+  '/come-si-gioca': typeof ComeSiGiocaRoute
   '/crea': typeof CreaRoute
   '/messaggi': typeof MessaggiRoute
   '/negozio': typeof NegozioRoute
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/classifica': typeof ClassificaRoute
   '/collezione': typeof CollezioneRoute
+  '/come-si-gioca': typeof ComeSiGiocaRoute
   '/crea': typeof CreaRoute
   '/messaggi': typeof MessaggiRoute
   '/negozio': typeof NegozioRoute
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/classifica': typeof ClassificaRoute
   '/collezione': typeof CollezioneRoute
+  '/come-si-gioca': typeof ComeSiGiocaRoute
   '/crea': typeof CreaRoute
   '/messaggi': typeof MessaggiRoute
   '/negozio': typeof NegozioRoute
@@ -162,6 +171,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/classifica'
     | '/collezione'
+    | '/come-si-gioca'
     | '/crea'
     | '/messaggi'
     | '/negozio'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/classifica'
     | '/collezione'
+    | '/come-si-gioca'
     | '/crea'
     | '/messaggi'
     | '/negozio'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/classifica'
     | '/collezione'
+    | '/come-si-gioca'
     | '/crea'
     | '/messaggi'
     | '/negozio'
@@ -214,6 +226,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ClassificaRoute: typeof ClassificaRoute
   CollezioneRoute: typeof CollezioneRoute
+  ComeSiGiocaRoute: typeof ComeSiGiocaRoute
   CreaRoute: typeof CreaRoute
   MessaggiRoute: typeof MessaggiRoute
   NegozioRoute: typeof NegozioRoute
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/collezione'
       fullPath: '/collezione'
       preLoaderRoute: typeof CollezioneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/come-si-gioca': {
+      id: '/come-si-gioca'
+      path: '/come-si-gioca'
+      fullPath: '/come-si-gioca'
+      preLoaderRoute: typeof ComeSiGiocaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/crea': {
@@ -342,6 +362,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ClassificaRoute: ClassificaRoute,
   CollezioneRoute: CollezioneRoute,
+  ComeSiGiocaRoute: ComeSiGiocaRoute,
   CreaRoute: CreaRoute,
   MessaggiRoute: MessaggiRoute,
   NegozioRoute: NegozioRoute,

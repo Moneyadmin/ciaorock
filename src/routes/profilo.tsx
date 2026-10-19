@@ -261,9 +261,12 @@ function ProfilePage() {
         )}
       </section>
       <section className="mt-8 space-y-2 pb-6">
-        <h2 className="text-lg">Privacy</h2>
+        <h2 className="text-lg">Regole e privacy</h2>
         <p className="text-xs text-muted-foreground">
-          Leggi l'
+          <Link to="/come-si-gioca" className="font-bold underline">
+            Come si gioca
+          </Link>
+          {" · "}Leggi l'
           <Link to="/privacy" className="font-bold underline">
             informativa privacy
           </Link>{" "}
