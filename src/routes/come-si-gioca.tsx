@@ -52,8 +52,8 @@ function HowToPlayPage() {
       <List>
         <li>Dipingi un sasso: una faccia, un animale, un disegno, quello che vuoi.</li>
         <li>
-          Scatta la foto del sasso dipinto. L'AI controlla che si veda il disegno e che nella foto
-          non ci siano persone o dati personali.
+          Scatta la foto del sasso dipinto: l'AI controlla che si veda il disegno. Inquadra solo il
+          sasso, senza persone né dati personali (targhe, indirizzi).
         </li>
         <li>
           Puoi nasconderlo solo dove ti trovi: il nascondiglio deve essere entro {HIDE_RADIUS_M}{" "}

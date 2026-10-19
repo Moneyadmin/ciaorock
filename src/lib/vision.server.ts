@@ -8,24 +8,25 @@ export type RockPhotoCheck = {
   message: string;
 };
 
-const Verdict = z.object({
-  painted: z.boolean(),
-  safe: z.boolean(),
-  reason: z.string(),
-});
+/**
+ * Controllo extra "niente persone né dati personali" sulle foto di sassi e ritrovamenti.
+ * Spento per ora: l'AI scambiava le facce dipinte sui sassi per persone. Si riaccende con la
+ * variabile AI_PHOTO_SAFETY=on nel Worker, senza toccare il codice.
+ */
+function safetyOn() {
+  return process.env["AI_PHOTO_SAFETY"] === "on";
+}
 
-const MatchVerdict = z.object({
-  painted: z.boolean(),
-  same: z.boolean(),
-  safe: z.boolean(),
-  reason: z.string(),
-});
+const Verdict = z.object({ painted: z.boolean(), reason: z.string() });
+const SafeVerdict = Verdict.extend({ safe: z.boolean() });
 
-/** Regola comune: le foto di sassi e ritrovamenti non devono mostrare persone o dati personali. */
+const MatchVerdict = z.object({ painted: z.boolean(), same: z.boolean(), reason: z.string() });
+const SafeMatchVerdict = MatchVerdict.extend({ safe: z.boolean() });
+
 const SAFE_RULE =
-  "safe=false se la foto mostra persone riconoscibili (volti, anche parziali) o parti del corpo oltre a mani e dita, nudità, violenza, armi, droghe, alcol, simboli d'odio, scritte volgari, oppure dati personali leggibili (targhe, numeri civici o indirizzi, nomi di scuole, documenti, schermi con messaggi). Mani che tengono il sasso, prati, strade, muri e panchine vanno bene.";
+  'Aggiungi la chiave "safe" (boolean). Le facce, gli occhi e i personaggi DIPINTI sul sasso sono il soggetto del gioco e vanno sempre bene: non sono persone. safe=false solo se nella foto, oltre al sasso, compare una persona vera riconoscibile (il suo volto reale) o parti del corpo oltre a mani e dita, nudità, violenza, armi, droghe, simboli d\'odio, scritte volgari, oppure dati personali leggibili (targhe, numeri civici o indirizzi, nomi di scuole, documenti, schermi con messaggi).';
 const NOT_SAFE =
-  "Foto rifiutata: non deve mostrare persone, volti o dati personali (targhe, indirizzi, scuole). Rifalla inquadrando solo il sasso.";
+  "Foto rifiutata: non deve mostrare persone vere o dati personali (targhe, indirizzi, scuole). Rifalla inquadrando solo il sasso.";
 
 function mediaTypeOf(dataUrl: string) {
   const end = dataUrl.indexOf(";");
@@ -46,14 +47,14 @@ export async function checkPainted(photo: string): Promise<RockPhotoCheck> {
   try {
     const result = streamText({
       model: openrouter(VISION_MODEL),
-      output: Output.object({ schema: Verdict }),
+      output: Output.object({ schema: safetyOn() ? SafeVerdict : Verdict }),
       messages: [
         {
           role: "user",
           content: [
             {
               type: "text",
-              text: `Guarda la foto. Rispondi SOLO con JSON con esattamente le chiavi "painted" (boolean), "safe" (boolean) e "reason" (frase breve in italiano). painted=true solo se la foto mostra un sasso/pietra con una faccia dipinta o un disegno dipinto chiaramente visibile. ${SAFE_RULE}`,
+              text: `Guarda la foto. Rispondi SOLO con JSON con le chiavi "painted" (boolean) e "reason" (frase breve in italiano). painted=true solo se la foto mostra un sasso/pietra con una faccia dipinta o un disegno dipinto chiaramente visibile.${safetyOn() ? ` ${SAFE_RULE}` : ""}`,
             },
             {
               type: "file",
@@ -65,8 +66,8 @@ export async function checkPainted(photo: string): Promise<RockPhotoCheck> {
       ],
     });
 
-    const verdict = await result.output;
-    if (!verdict.safe) return { approved: false, message: NOT_SAFE };
+    const verdict = (await result.output) as z.infer<typeof Verdict> & { safe?: boolean };
+    if (verdict.safe === false) return { approved: false, message: NOT_SAFE };
     return {
       approved: verdict.painted,
       message: verdict.painted
@@ -111,7 +112,7 @@ export async function checkSameRock(photo: string, reference: string): Promise<R
   try {
     const result = streamText({
       model: openrouter(VISION_MODEL),
-      output: Output.object({ schema: MatchVerdict }),
+      output: Output.object({ schema: safetyOn() ? SafeMatchVerdict : MatchVerdict }),
       messages: [
         {
           role: "user",
@@ -119,8 +120,8 @@ export async function checkSameRock(photo: string, reference: string): Promise<R
             {
               type: "text",
               text:
-                'Ti mostro due foto. IMMAGINE 1 = foto originale del sasso registrato. IMMAGINE 2 = foto appena scattata dal giocatore. Rispondi SOLO con JSON con esattamente le chiavi "painted" (boolean), "same" (boolean), "safe" (boolean, riferito a IMMAGINE 2) e "reason" (frase breve in italiano). painted=true solo se IMMAGINE 2 mostra un sasso con una faccia o un disegno dipinto. same=true solo se il sasso dipinto in IMMAGINE 2 è lo STESSO sasso di IMMAGINE 1: confronta il disegno (soggetto, colori, forma del sasso). Se i disegni sono diversi (per esempio una faccina felice contro una spada) same=false. Ignora differenze di luce, sfondo, angolo o distanza. ' +
-                SAFE_RULE,
+                'Ti mostro due foto. IMMAGINE 1 = foto originale del sasso registrato. IMMAGINE 2 = foto appena scattata dal giocatore. Rispondi SOLO con JSON con le chiavi "painted" (boolean), "same" (boolean) e "reason" (frase breve in italiano). painted=true solo se IMMAGINE 2 mostra un sasso con una faccia o un disegno dipinto. same=true solo se il sasso dipinto in IMMAGINE 2 è lo STESSO sasso di IMMAGINE 1: confronta il disegno (soggetto, colori, forma del sasso). Se i disegni sono diversi (per esempio una faccina felice contro una spada) same=false. Ignora differenze di luce, sfondo, angolo o distanza.' +
+                (safetyOn() ? ` ${SAFE_RULE} (riferito a IMMAGINE 2)` : ""),
             },
             { type: "text", text: "IMMAGINE 1 (originale):" },
             { type: "file", mediaType: mediaTypeOf(reference), data: reference },
@@ -131,8 +132,8 @@ export async function checkSameRock(photo: string, reference: string): Promise<R
       ],
     });
 
-    const verdict = await result.output;
-    if (!verdict.safe) return { approved: false, message: NOT_SAFE };
+    const verdict = (await result.output) as z.infer<typeof MatchVerdict> & { safe?: boolean };
+    if (verdict.safe === false) return { approved: false, message: NOT_SAFE };
     if (!verdict.painted) {
       return {
         approved: false,

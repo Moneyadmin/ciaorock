@@ -125,9 +125,9 @@ function PrivacyPage() {
       </p>
       <List>
         <li>
-          le <strong>foto</strong> dei sassi, le foto-prova e le foto profilo, per verificare che
-          mostrino un sasso dipinto (o lo stesso sasso registrato) e che non contengano persone,
-          contenuti inadatti o dati personali come targhe o indirizzi;
+          le <strong>foto</strong> dei sassi e le foto-prova, per verificare che mostrino un sasso
+          dipinto (o lo stesso sasso registrato), e le foto profilo, per verificare che non
+          contengano contenuti inadatti o dati personali leggibili;
         </li>
         <li>
           i <strong>testi pubblici</strong> (nickname, bio, nome e indizio dei sassi, commenti sui
