@@ -13,6 +13,7 @@ import {
   Navigation,
   Repeat2,
   ScanSearch,
+  SearchX,
   Star,
   Trophy,
   WifiOff,
@@ -26,10 +27,12 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   fetchDoubleDays,
   fetchMyFinds,
+  fetchRockLore,
   fetchRockPhoto,
   fetchRocks,
   moveRock,
   registerFind,
+  reportMissingRock,
   type RockRow,
 } from "@/lib/api";
 import { adminMoveRock } from "@/lib/admin.functions";
@@ -478,7 +481,8 @@ function RockSheet({
   onDone: (message: string) => void;
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
-  const [mode, setMode] = useState<"view" | "find" | "move">("view");
+  const [mode, setMode] = useState<"view" | "find" | "move" | "report">("view");
+  const [lore, setLore] = useState<string | null>(null);
   const [proof, setProof] = useState<string | null>(null);
   const [clue, setClue] = useState(rock.clue);
   const [target, setTarget] = useState({ lat: rock.lat, lng: rock.lng });
@@ -497,6 +501,18 @@ function RockSheet({
   const distance = distanceMeters(me, rock);
   const near = distance <= FIND_RADIUS_M;
   const canMove = mine || found;
+
+  useEffect(() => {
+    let active = true;
+    fetchRockLore(rock.id)
+      .then((value) => {
+        if (active) setLore(value);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [rock.id]);
 
   useEffect(() => {
     let active = true;
@@ -525,6 +541,7 @@ function RockSheet({
     setToken(undefined);
     const dataUrl = await compressImage(file);
     setProof(dataUrl);
+    if (mode === "report") return; // foto del punto vuoto: niente verifica AI
     if (!navigator.onLine) {
       setVerdict("Offline: la verifica AI verrà fatta al ritorno del segnale.");
       return;
@@ -584,6 +601,24 @@ function RockSheet({
       setRating(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registrazione non riuscita.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmReport() {
+    if (tooFar()) return;
+    if (!proof) return setError("Scatta una foto del punto in cui dovrebbe essere il sasso.");
+    if (!navigator.onLine) return setError("Serve la connessione per inviare la segnalazione.");
+    setBusy(true);
+    setError(null);
+    try {
+      await reportMissingRock({ rockId: rock.id, photo: proof, lat: me.lat, lng: me.lng });
+      onDone(
+        "Segnalazione inviata, grazie! Se altri giocatori confermano, lo staff controllerà 🔎",
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Segnalazione non riuscita.");
     } finally {
       setBusy(false);
     }
@@ -780,6 +815,15 @@ function RockSheet({
           </div>
         </div>
 
+        {lore && (
+          <div className="mt-3 rounded-[1.4rem] bg-sun/20 p-4">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-ink/70">
+              📜 La storia del sasso
+            </p>
+            <p className="mt-1 whitespace-pre-line text-[15px] leading-snug">{lore}</p>
+          </div>
+        )}
+
         <div className="mt-3 grid grid-cols-2 gap-2 text-[13px] font-bold">
           <StatChip
             icon={<Navigation className="h-4 w-4" />}
@@ -815,8 +859,11 @@ function RockSheet({
                   <span className="bg-brand grid h-12 w-12 place-items-center rounded-2xl text-white shadow-glow">
                     <Camera className="h-6 w-6" />
                   </span>
-                  Tocca per scattare la foto
-                  {mode === "find" ? "-prova del ritrovamento" : " del nuovo nascondiglio"}
+                  {mode === "report"
+                    ? "Tocca per fotografare il punto in cui dovrebbe essere il sasso"
+                    : `Tocca per scattare la foto${
+                        mode === "find" ? "-prova del ritrovamento" : " del nuovo nascondiglio"
+                      }`}
                 </span>
               )}
             </button>
@@ -848,6 +895,14 @@ function RockSheet({
                   verdict
                 )}
               </div>
+            )}
+
+            {mode === "report" && (
+              <p className="rounded-2xl bg-muted px-4 py-3 text-xs font-semibold text-muted-foreground">
+                Hai cercato bene ma il sasso non c'è? Fotografa il punto in cui dovrebbe essere
+                secondo l'indizio. Dopo 3 segnalazioni di giocatori diversi lo staff controlla e, se
+                serve, lo toglie dalla mappa.
+              </p>
             )}
 
             {mode === "move" && (
@@ -894,14 +949,22 @@ function RockSheet({
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => void (mode === "find" ? confirmFind() : confirmMove())}
+                onClick={() =>
+                  void (mode === "find"
+                    ? confirmFind()
+                    : mode === "report"
+                      ? confirmReport()
+                      : confirmMove())
+                }
                 className="press bg-brand flex-[1.4] rounded-2xl py-3.5 text-sm font-extrabold text-white shadow-glow disabled:opacity-60"
               >
                 {busy
                   ? "Invio…"
                   : mode === "find"
                     ? "Conferma ritrovamento"
-                    : "Conferma spostamento"}
+                    : mode === "report"
+                      ? "Invia segnalazione"
+                      : "Conferma spostamento"}
               </button>
             </div>
           </div>
@@ -942,6 +1005,19 @@ function RockSheet({
               <Repeat2 className="h-5 w-5" strokeWidth={2.6} />
               {canMove ? "Sposta / nascondi di nuovo" : "Trovalo prima di spostarlo"}
             </button>
+            {!mine && (
+              <button
+                type="button"
+                onClick={() => setMode("report")}
+                disabled={!near}
+                className="press flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-extrabold text-muted-foreground disabled:opacity-50"
+              >
+                <SearchX className="h-4 w-4" />
+                {near
+                  ? "Non lo trovi? Segnala che non c'è"
+                  : `Per segnalare che non c'è devi essere entro ${FIND_RADIUS_M} m`}
+              </button>
+            )}
           </div>
         )}
       </div>

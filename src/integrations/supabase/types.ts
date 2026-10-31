@@ -301,6 +301,60 @@ export type Database = {
         };
         Relationships: [];
       };
+      rock_reports: {
+        Row: {
+          created_at: string;
+          id: string;
+          photo: string;
+          resolution: string | null;
+          resolved_at: string | null;
+          rock_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          photo: string;
+          resolution?: string | null;
+          resolved_at?: string | null;
+          rock_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          photo?: string;
+          resolution?: string | null;
+          resolved_at?: string | null;
+          rock_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      admin_notifications: {
+        Row: {
+          created_at: string;
+          id: string;
+          kind: string;
+          read_at: string | null;
+          rock_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          kind: string;
+          read_at?: string | null;
+          rock_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          kind?: string;
+          read_at?: string | null;
+          rock_id?: string | null;
+        };
+        Relationships: [];
+      };
       find_photos: {
         Row: { find_id: string; photo: string; user_id: string };
         Insert: { find_id: string; photo: string; user_id: string };
@@ -495,6 +549,7 @@ export type Database = {
           id: string;
           lat: number;
           lng: number;
+          lore: string | null;
           move_count: number;
           name: string;
           photo: string;
@@ -517,6 +572,7 @@ export type Database = {
           id?: string;
           lat: number;
           lng: number;
+          lore?: string | null;
           move_count?: number;
           name: string;
           photo: string;
@@ -539,6 +595,7 @@ export type Database = {
           id?: string;
           lat?: number;
           lng?: number;
+          lore?: string | null;
           move_count?: number;
           name?: string;
           photo?: string;
@@ -631,6 +688,12 @@ export type Database = {
         }[];
       };
       my_wallet: { Args: never; Returns: { balance: number; earned: number; spent: number }[] };
+      needs_age_check: { Args: { _uid: string }; Returns: boolean };
+      chat_allowed_with: { Args: { _other: string }; Returns: string };
+      my_status: {
+        Args: never;
+        Returns: { activity: number; consented: boolean; email_confirmed: boolean }[];
+      };
       prepare_account_deletion: { Args: { _uid: string }; Returns: undefined };
       accept_terms: { Args: { _birth: string; _version: string }; Returns: undefined };
       claim_rewards: {

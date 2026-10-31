@@ -13,11 +13,19 @@ export function ConsentGate({
   onDone,
   onSignOut,
   hasProfile,
+  reason = "progress",
 }: {
   onDone: () => void | Promise<void>;
   onSignOut: () => void | Promise<void>;
   hasProfile: boolean;
+  /** perché la chiediamo adesso */
+  reason?: "progress" | "chat";
 }) {
+  const title = reason === "chat" ? "Conferma la tua età" : "Grande, 5 sassi!";
+  const intro =
+    reason === "chat"
+      ? "Per usare la chat devi confermare la tua età."
+      : `Prima di continuare conferma la tua età: Ciao Rock è per chi ha almeno ${MIN_AGE} anni.`;
   const [birth, setBirth] = useState("");
   const [accepted, setAccepted] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -78,10 +86,10 @@ export function ConsentGate({
           <ShieldCheck className="h-6 w-6" />
         </span>
         <div>
-          <h2 className="text-2xl leading-tight">Prima di giocare</h2>
+          <h2 className="text-2xl leading-tight">{title}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Ciao Rock è per chi ha almeno {MIN_AGE} anni. La data di nascita serve solo per questo
-            controllo: non la salviamo.
+            {intro} La data di nascita serve solo per il controllo: non la salviamo, teniamo solo se
+            hai più o meno di 18 anni (la chat è possibile solo tra coetanei).
           </p>
         </div>
       </div>

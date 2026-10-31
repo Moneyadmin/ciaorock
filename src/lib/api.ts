@@ -1,6 +1,12 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { FindRecord } from "@/lib/badges";
-import { claimFindFn, createRockFn, moveRockFn, type GameResult } from "@/lib/game.functions";
+import {
+  claimFindFn,
+  createRockFn,
+  moveRockFn,
+  reportMissingFn,
+  type GameResult,
+} from "@/lib/game.functions";
 
 export type RockRow = {
   id: string;
@@ -155,10 +161,32 @@ function unwrap(result: GameResult) {
   return result;
 }
 
+/** Storia del sasso (facoltativa). null anche se il database non ha ancora la colonna. */
+export async function fetchRockLore(rockId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("rocks")
+    .select("lore")
+    .eq("id", rockId)
+    .maybeSingle();
+  if (error) return null;
+  return (data as { lore?: string | null } | null)?.lore ?? null;
+}
+
+/** Segnala che un sasso non c'è più (serve essere entro 75 m e una foto del punto). */
+export async function reportMissingRock(input: {
+  rockId: string;
+  photo: string;
+  lat: number;
+  lng: number;
+}) {
+  return unwrap(await reportMissingFn({ data: input }));
+}
+
 /** Nuovo sasso: il server controlla la foto (o il gettone dell'AI) e lo registra. */
 export async function createRock(input: {
   name: string;
   clue: string;
+  lore?: string | undefined;
   photo: string;
   lat: number;
   lng: number;

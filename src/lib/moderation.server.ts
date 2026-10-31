@@ -10,7 +10,7 @@ export type TextKind = "nickname" | "bio" | "rock";
 const CONTEXT: Record<TextKind, string> = {
   nickname: "il nickname pubblico di un giocatore",
   bio: "la biografia pubblica del profilo di un giocatore",
-  rock: "il nome e l'indizio di un sasso dipinto nascosto (l'indizio descrive il nascondiglio in un luogo pubblico)",
+  rock: "il nome, l'indizio ed eventualmente la storia inventata di un sasso dipinto nascosto (l'indizio descrive il nascondiglio in un luogo pubblico; la storia è un racconto di fantasia sul sasso)",
 };
 
 export type TextCheck = { ok: true } | { ok: false; message: string };

@@ -4,6 +4,7 @@ export type PendingCreate = {
   payload: {
     name: string;
     clue: string;
+    lore?: string;
     photo: string;
     lat: number;
     lng: number;

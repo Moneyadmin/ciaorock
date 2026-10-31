@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/lib/useSession";
 import { KeyRound, Loader2, Mail } from "lucide-react";
 import { Logo } from "@/components/Logo";
-import { ConsentGate } from "@/components/ConsentGate";
 import { createProfile } from "@/lib/profile.functions";
 
 export const Route = createFileRoute("/auth")({
@@ -45,6 +44,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [nickname, setNickname] = useState("");
+  const [termsOk, setTermsOk] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [info, setInfo] = useState<string | null>(null);
@@ -248,6 +248,7 @@ function AuthPage() {
     setError(null);
     const nick = nickname.trim();
     if (nick.length < 3) return setError("Il nickname deve avere almeno 3 caratteri.");
+    if (!termsOk) return setError("Per giocare accetta i termini d'uso e l'informativa privacy.");
     if (!userId) return setError("Sessione scaduta: accedi di nuovo.");
     setBusy(true);
     try {
@@ -277,9 +278,7 @@ function AuthPage() {
         </p>
       </div>
 
-      {needsNickname && !consented ? (
-        <ConsentGate hasProfile={false} onDone={refresh} onSignOut={signOut} />
-      ) : needsNickname ? (
+      {needsNickname ? (
         <form onSubmit={saveNickname} className="glass relative space-y-4 rounded-[2rem] p-5">
           <div>
             <h2 className="text-2xl">Scegli il tuo nickname</h2>
@@ -298,7 +297,26 @@ function AuthPage() {
               {error}
             </p>
           )}
-          <PrimaryButton disabled={busy}>Entra in RockDex</PrimaryButton>
+          <label className="flex items-start gap-2.5 text-sm">
+            <input
+              type="checkbox"
+              checked={termsOk}
+              onChange={(e) => setTermsOk(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 accent-[var(--primary)]"
+            />
+            <span>
+              Ho almeno 14 anni, ho letto l'
+              <Link to="/privacy" target="_blank" className="font-bold text-primary underline">
+                informativa privacy
+              </Link>{" "}
+              e accetto i{" "}
+              <Link to="/termini" target="_blank" className="font-bold text-primary underline">
+                termini d'uso
+              </Link>
+              .
+            </span>
+          </label>
+          <PrimaryButton disabled={busy || !termsOk}>Entra in RockDex</PrimaryButton>
           <button
             type="button"
             disabled={busy}

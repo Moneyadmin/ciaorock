@@ -24,7 +24,8 @@ function HowToPlayPage() {
         Ciao Rock è una caccia al tesoro con i sassi dipinti: c'è chi li dipinge e li nasconde in
         giro, e chi li cerca con la mappa e gli indizi. Ogni sasso trovato finisce nella tua
         collezione, e può ripartire per un nuovo nascondiglio. Possono giocare tutti quelli che
-        hanno almeno {MIN_AGE} anni.
+        hanno almeno {MIN_AGE} anni: dopo i primi 5 sassi trovati o nascosti ti chiederemo di
+        confermare l'età.
       </p>
 
       <H2>🔍 Trovare un sasso</H2>
@@ -46,6 +47,11 @@ function HowToPlayPage() {
           Poi puoi votare quanto è stato difficile trovarlo (da 0 a 5) e lasciare un commento: i
           voti aiutano a rendere giusti i punti del sasso.
         </li>
+        <li>
+          Hai cercato bene ma il sasso non c'è? Quando sei entro {FIND_RADIUS_M} metri puoi
+          segnalarlo con una foto del punto in cui dovrebbe essere. Dopo 3 segnalazioni di giocatori
+          diversi lo staff controlla e, se serve, lo toglie dalla mappa.
+        </li>
       </List>
 
       <H2>🎨 Nascondere un sasso</H2>
@@ -62,6 +68,10 @@ function HowToPlayPage() {
         <li>
           Dagli un nome e scrivi un indizio per trovarlo, poi scegli la difficoltà. Nome e indizio
           vengono controllati: niente dati personali, parolacce o luoghi privati.
+        </li>
+        <li>
+          Se vuoi, scrivi anche la storia del sasso: chi è, da dove viene, cosa sogna. La leggerà
+          chi lo trova.
         </li>
         <li>
           L'AI legge l'indizio e decide quanti punti vale il sasso, da 50 a 2.000 punti. Dopo almeno
@@ -144,7 +154,10 @@ function HowToPlayPage() {
       <H2>💬 Amici e messaggi</H2>
       <List>
         <li>Cerca gli altri giocatori per nickname e mandagli una richiesta di amicizia.</li>
-        <li>I messaggi si possono scambiare solo tra amici.</li>
+        <li>
+          Per scrivervi dovete essere amici e aver confermato entrambi l'età e l'email. La chat non
+          è mai possibile tra un minorenne e un maggiorenne.
+        </li>
         <li>La tua posizione non è mai mostrata a nessuno, nemmeno agli amici.</li>
       </List>
 

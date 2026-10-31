@@ -3,7 +3,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { ProfileRow } from "@/lib/api";
 import { announceRewards } from "@/lib/rewards";
-import { TERMS_VERSION } from "@/lib/legal";
 
 /** Keep the daily login streak fresh (used by the "SERIE" badges): computed by the database. */
 async function touchStreak(profile: ProfileRow & { last_login_date: string | null }) {
@@ -27,8 +26,10 @@ export type SessionState = {
   profile: ProfileRow | null;
   banned: boolean;
   admin: boolean;
-  /** ha confermato l'età minima e accettato la versione attuale di termini e informativa */
+  /** ha confermato l'età (fascia) e accettato termini e informativa */
   consented: boolean;
+  /** ha già trovato o nascosto 5 sassi senza confermare l'età: va chiesta adesso */
+  needsAgeCheck: boolean;
   refresh: () => Promise<void>;
   signOut: () => Promise<void>;
 };
@@ -41,6 +42,7 @@ export function useSession(): SessionState {
   const [banned, setBanned] = useState(false);
   const [admin, setAdmin] = useState(false);
   const [consented, setConsented] = useState(true);
+  const [needsAgeCheck, setNeedsAgeCheck] = useState(false);
 
   const load = useCallback(async () => {
     const { data } = await supabase.auth.getSession();
@@ -70,11 +72,13 @@ export function useSession(): SessionState {
         .eq("user_id", user.id)
         .eq("role", "admin")
         .maybeSingle(),
-      supabase.from("consents").select("terms_version").eq("user_id", user.id).maybeSingle(),
+      supabase.rpc("my_status"),
     ]);
 
-    // se la tabella non esiste ancora (database non aggiornato) non blocchiamo nessuno
-    setConsented(Boolean(consentRes.error) || consentRes.data?.terms_version === TERMS_VERSION);
+    // se la funzione non esiste ancora (database non aggiornato) non blocchiamo nessuno
+    const status = consentRes.error ? null : consentRes.data?.[0];
+    setConsented(status ? status.consented : true);
+    setNeedsAgeCheck(Boolean(status && !status.consented && status.activity >= 5));
 
     setAdmin(Boolean(roleRow));
 
@@ -129,5 +133,16 @@ export function useSession(): SessionState {
     setBanned(false);
   }, []);
 
-  return { loading, userId, email, profile, banned, admin, consented, refresh: load, signOut };
+  return {
+    loading,
+    userId,
+    email,
+    profile,
+    banned,
+    admin,
+    consented,
+    needsAgeCheck,
+    refresh: load,
+    signOut,
+  };
 }

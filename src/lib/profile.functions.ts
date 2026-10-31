@@ -86,8 +86,8 @@ const Nickname = z
   .regex(/^[\p{L}\p{N}._\- ]+$/u, "Usa solo lettere, numeri, spazi, punti, trattini e _.");
 
 /**
- * Crea il profilo con il nickname scelto: serve aver accettato termini e informativa (età
- * minima 14 anni) e il nickname passa dal controllo AI. Il browser non può crearlo da solo.
+ * Crea il profilo con il nickname scelto, dopo il controllo del testo. Il browser non può
+ * crearlo da solo. L'età si conferma più avanti, dal 5° sasso trovato o nascosto.
  */
 export const createProfile = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -98,16 +98,6 @@ export const createProfile = createServerFn({ method: "POST" })
     const nickname = parsed.data.replace(/\s+/g, " ");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: consent, error: consentError } = await supabaseAdmin
-      .from("consents")
-      .select("user_id")
-      .eq("user_id", context.userId)
-      .maybeSingle();
-    // (consentError = database non ancora aggiornato con la tabella dei consensi)
-    if (!consent && !consentError) {
-      return { ok: false, message: "Prima conferma l'età e accetta i termini." };
-    }
-
     const { data: taken } = await supabaseAdmin
       .from("profiles")
       .select("id")

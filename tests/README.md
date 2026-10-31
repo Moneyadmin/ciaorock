@@ -13,3 +13,6 @@
   acquisto o sblocco automatico a condizione, avviso una volta sola, premi posseduti non cancellabili).
 - `minori-test.sql`: età minima e consenso, chat solo tra amici (e mai da account bannati), foto-prova
   visibili solo a chi le scatta e agli admin, cancellazione dell'account.
+- `segnalazioni-test.sql`: storia del sasso, segnalazioni di sassi smarriti (una per giocatore,
+  notifica agli admin alla terza, foto visibili solo all'admin, chiusura quando il sasso viene
+  trovato o spostato).

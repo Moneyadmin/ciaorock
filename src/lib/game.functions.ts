@@ -26,6 +26,8 @@ function far(meters: number) {
 const CreateInput = z.object({
   name: z.string().trim().min(3).max(60),
   clue: z.string().trim().min(10).max(800),
+  /** storia del sasso, facoltativa */
+  lore: z.string().trim().max(1000).optional(),
   difficulty: z.enum(DIFFICULTIES),
   photo: Photo,
   lat: Lat,
@@ -35,6 +37,17 @@ const CreateInput = z.object({
   fromLng: Lng.optional(),
   token: Token,
 });
+
+/** Dal 5° sasso trovato o nascosto serve aver confermato l'età (lo decide il database). */
+async function ageCheckBlocks(userId: string): Promise<GameResult | null> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin.rpc("needs_age_check", { _uid: userId });
+  if (error || data !== true) return null; // funzione assente (database non aggiornato) = nessun blocco
+  return {
+    ok: false,
+    message: "Prima di continuare conferma la tua età: apri l'app e segui la richiesta.",
+  };
+}
 
 async function isAdmin(context: { supabase: unknown; userId: string }) {
   const supabase = context.supabase as {
@@ -51,6 +64,8 @@ export const createRockFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => CreateInput.parse(d))
   .handler(async ({ data, context }): Promise<GameResult> => {
+    const blocked = await ageCheckBlocks(context.userId);
+    if (blocked) return blocked;
     if (!(await isAdmin(context))) {
       if (data.fromLat == null || data.fromLng == null) {
         return { ok: false, message: "Serve la tua posizione GPS per nascondere un sasso." };
@@ -64,7 +79,10 @@ export const createRockFn = createServerFn({ method: "POST" })
       }
     }
     const { checkText } = await import("./moderation.server");
-    const text = await checkText("rock", `Nome: ${data.name}\nIndizio: ${data.clue}`);
+    const text = await checkText(
+      "rock",
+      `Nome: ${data.name}\nIndizio: ${data.clue}${data.lore ? `\nStoria del sasso: ${data.lore}` : ""}`,
+    );
     if (!text.ok) return { ok: false, message: text.message };
     const { checkPhotoToken } = await import("./photo-token.server");
     if (!checkPhotoToken(data.token, "paint", context.userId, null, data.photo)) {
@@ -78,6 +96,7 @@ export const createRockFn = createServerFn({ method: "POST" })
       .insert({
         name: data.name,
         clue: data.clue,
+        ...(data.lore ? { lore: data.lore } : {}),
         difficulty: data.difficulty,
         photo: data.photo,
         lat: data.lat,
@@ -102,6 +121,8 @@ export const claimFindFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => FindInput.parse(d))
   .handler(async ({ data, context }): Promise<GameResult> => {
+    const blocked = await ageCheckBlocks(context.userId);
+    if (blocked) return blocked;
     const { loadRock, hasFound, verifyRockProof } = await import("./game.server");
     const rock = await loadRock(data.rockId);
     if (!rock) return { ok: false, message: "Questo sasso non esiste più." };
@@ -205,5 +226,42 @@ export const moveRockFn = createServerFn({ method: "POST" })
       })
       .eq("id", rock.id);
     if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+const ReportInput = z.object({
+  rockId: z.string().uuid(),
+  photo: Photo,
+  lat: Lat,
+  lng: Lng,
+});
+
+/**
+ * "Qui non c'è": il giocatore segnala un sasso che non trova, con una foto di dove dovrebbe
+ * essere. Deve trovarsi entro FIND_RADIUS_M dal sasso. Alla terza segnalazione aperta il
+ * database avvisa gli admin.
+ */
+export const reportMissingFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => ReportInput.parse(d))
+  .handler(async ({ data, context }): Promise<GameResult> => {
+    const { loadRock } = await import("./game.server");
+    const rock = await loadRock(data.rockId);
+    if (!rock) return { ok: false, message: "Questo sasso non è più sulla mappa." };
+    const away = metersBetween(data, rock);
+    if (away > FIND_RADIUS_M) {
+      return {
+        ok: false,
+        message: `Sei a ${far(away)} dal sasso: per segnalarlo devi essere sul posto (entro ${FIND_RADIUS_M} m).`,
+      };
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("rock_reports")
+      .insert({ rock_id: rock.id, user_id: context.userId, photo: data.photo });
+    if (error) {
+      if (error.code === "23505") return { ok: false, message: "Hai già segnalato questo sasso." };
+      throw new Error(error.message);
+    }
     return { ok: true };
   });

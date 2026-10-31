@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { RewardsAdmin } from "@/components/RewardsAdmin";
+import { MissingAdmin } from "@/components/MissingAdmin";
 import { ADMIN_HOLD_MS } from "@/lib/rules";
 import { AppShell } from "@/components/AppShell";
 import { useSession } from "@/lib/useSession";
@@ -19,6 +20,7 @@ import {
   adminListRockPoints,
   adminSetRockPoints,
   adminMoveRock,
+  adminUpdateRockText,
   adminRemoveDoubleDay,
   adminRestoreRock,
   adminSetBanned,
@@ -45,7 +47,15 @@ export const Route = createFileRoute("/admin")({
 });
 
 type Player = { id: string; nickname: string; points_adjust: number; banned: boolean };
-type Rock = { id: string; name: string; lat: number; lng: number; move_count: number };
+type Rock = {
+  id: string;
+  name: string;
+  clue: string;
+  lore: string | null;
+  lat: number;
+  lng: number;
+  move_count: number;
+};
 type Special = { id: string; day: string; multiplier: number };
 type Trashed = { id: string; name: string; lat: number; lng: number; deleted_at: string };
 
@@ -143,6 +153,7 @@ function AdminTools() {
   const adjust = useServerFn(adminAdjustPoints);
   const setBanned = useServerFn(adminSetBanned);
   const moveRock = useServerFn(adminMoveRock);
+  const updateRockText = useServerFn(adminUpdateRockText);
   const deleteRock = useServerFn(adminDeleteRock);
   const setDay = useServerFn(adminSetDoubleDay);
   const removeDay = useServerFn(adminRemoveDoubleDay);
@@ -162,7 +173,7 @@ function AdminTools() {
   const [annTitle, setAnnTitle] = useState("");
   const [annBody, setAnnBody] = useState("");
   const [tab, setTab] = useState<
-    "sassi" | "punti" | "giocatori" | "premi" | "giorni" | "avvisi" | "cestino"
+    "sassi" | "smarriti" | "punti" | "giocatori" | "premi" | "giorni" | "avvisi" | "cestino"
   >("sassi");
   const [newDay, setNewDay] = useState("");
   const [newMult, setNewMult] = useState(2);
@@ -204,19 +215,28 @@ function AdminTools() {
   return (
     <div className="space-y-4 pb-24">
       <div className="-mx-1 flex gap-0.5 overflow-x-auto rounded-2xl bg-muted p-1 text-sm font-extrabold">
-        {(["sassi", "punti", "giocatori", "premi", "giorni", "avvisi", "cestino"] as const).map(
-          (t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`shrink-0 grow rounded-xl px-2.5 py-2 text-xs capitalize ${
-                tab === t ? "bg-ink text-ink-foreground shadow-pebble" : "text-muted-foreground"
-              }`}
-            >
-              {t}
-            </button>
-          ),
-        )}
+        {(
+          [
+            "sassi",
+            "smarriti",
+            "punti",
+            "giocatori",
+            "premi",
+            "giorni",
+            "avvisi",
+            "cestino",
+          ] as const
+        ).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`shrink-0 grow rounded-xl px-2.5 py-2 text-xs capitalize ${
+              tab === t ? "bg-ink text-ink-foreground shadow-pebble" : "text-muted-foreground"
+            }`}
+          >
+            {t}
+          </button>
+        ))}
       </div>
 
       {tab === "avvisi" && (
@@ -282,6 +302,8 @@ function AdminTools() {
 
       {tab === "premi" && <RewardsAdmin />}
 
+      {tab === "smarriti" && <MissingAdmin onChanged={() => void reload()} />}
+
       {tab === "cestino" &&
         (trash.length === 0 ? (
           <p className="pebble-card p-5 text-sm text-muted-foreground">Il cestino è vuoto.</p>
@@ -315,6 +337,12 @@ function AdminTools() {
               run(() => moveRock({ data: { rockId: rock.id, lat, lng } }), "Sasso spostato")
             }
             onDelete={() => run(() => deleteRock({ data: { rockId: rock.id } }), "Sasso eliminato")}
+            onSaveText={(name, clue, lore) =>
+              run(
+                () => updateRockText({ data: { rockId: rock.id, name, clue, lore } }),
+                "Testi del sasso aggiornati",
+              )
+            }
           />
         ))}
 
@@ -389,18 +417,89 @@ function RockRowCard({
   rock,
   onMove,
   onDelete,
+  onSaveText,
 }: {
   rock: Rock;
   onMove: (lat: number, lng: number) => void;
   onDelete: () => void;
+  onSaveText: (name: string, clue: string, lore: string) => void;
 }) {
   const [lat, setLat] = useState(String(rock.lat));
   const [lng, setLng] = useState(String(rock.lng));
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(rock.name);
+  const [clue, setClue] = useState(rock.clue);
+  const [lore, setLore] = useState(rock.lore ?? "");
 
   return (
     <div className="pebble-card space-y-2 p-4">
       <p className="font-bold">{rock.name}</p>
       <p className="text-xs text-muted-foreground">Spostamenti: {rock.move_count}</p>
+      {editing ? (
+        <div className="space-y-2 rounded-2xl bg-muted/60 p-3">
+          <label className="block text-xs font-bold">
+            Nome
+            <input
+              value={name}
+              maxLength={60}
+              onChange={(e) => setName(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block text-xs font-bold">
+            Indizio
+            <textarea
+              value={clue}
+              maxLength={800}
+              rows={3}
+              onChange={(e) => setClue(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block text-xs font-bold">
+            Storia del sasso (facoltativa)
+            <textarea
+              value={lore}
+              maxLength={1000}
+              rows={3}
+              onChange={(e) => setLore(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm"
+            />
+          </label>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setEditing(false);
+                setName(rock.name);
+                setClue(rock.clue);
+                setLore(rock.lore ?? "");
+              }}
+              className="flex-1 rounded-xl bg-muted py-2 text-sm font-bold"
+            >
+              Annulla
+            </button>
+            <button
+              onClick={() => {
+                onSaveText(name, clue, lore);
+                setEditing(false);
+              }}
+              className="flex-1 rounded-xl bg-primary py-2 text-sm font-bold text-primary-foreground"
+            >
+              Salva testi
+            </button>
+          </div>
+        </div>
+      ) : (
+        <>
+          <p className="line-clamp-2 text-sm text-muted-foreground">{rock.clue}</p>
+          <button
+            onClick={() => setEditing(true)}
+            className="rounded-xl bg-secondary px-3 py-2 text-xs font-bold text-secondary-foreground"
+          >
+            Modifica nome, indizio e storia
+          </button>
+        </>
+      )}
       <div className="flex gap-2">
         <input
           value={lat}

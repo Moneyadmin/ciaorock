@@ -46,19 +46,26 @@ export const adminListRocks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await assertAdmin(context as Ctx);
-    const { data, error } = await context.supabase
-      .from("rocks")
-      .select("id,name,lat,lng,move_count")
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false });
-    if (error) throw new Error(error.message);
-    return (data ?? []) as Array<{
+    type AdminRock = {
       id: string;
       name: string;
+      clue: string;
+      lore: string | null;
       lat: number;
       lng: number;
       move_count: number;
-    }>;
+    };
+    const query = (cols: string) =>
+      context.supabase
+        .from("rocks")
+        .select(cols)
+        .is("deleted_at", null)
+        .order("created_at", { ascending: false });
+    let { data, error } = await query("id,name,clue,lore,lat,lng,move_count");
+    // database senza la colonna "lore": si legge il resto
+    if (error) ({ data, error } = await query("id,name,clue,lat,lng,move_count"));
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as unknown as AdminRock[]).map((r) => ({ ...r, lore: r.lore ?? null }));
   });
 
 /** Cestino: i sassi eliminati restano recuperabili. */
@@ -273,5 +280,117 @@ export const adminSetRockPoints = createServerFn({ method: "POST" })
       .update({ points_override: data.points })
       .eq("id", data.rockId);
     if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+/** Modifica nome, indizio e storia di un sasso. */
+export const adminUpdateRockText = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { rockId: string; name: string; clue: string; lore: string }) => ({
+    rockId: String(data.rockId),
+    name: String(data.name ?? "").trim(),
+    clue: String(data.clue ?? "").trim(),
+    lore: String(data.lore ?? "").trim(),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as Ctx);
+    if (data.name.length < 3 || data.name.length > 60)
+      throw new Error("Nome: da 3 a 60 caratteri.");
+    if (data.clue.length < 10 || data.clue.length > 800) {
+      throw new Error("Indizio: da 10 a 800 caratteri.");
+    }
+    if (data.lore.length > 1000) throw new Error("Storia: al massimo 1000 caratteri.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("rocks")
+      .update({ name: data.name, clue: data.clue, lore: data.lore || null })
+      .eq("id", data.rockId);
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
+
+export type MissingReport = {
+  id: string;
+  created_at: string;
+  photo: string;
+  nickname: string;
+};
+export type MissingRock = {
+  rock_id: string;
+  name: string;
+  clue: string;
+  lat: number;
+  lng: number;
+  reports: MissingReport[];
+};
+
+/** Sassi con segnalazioni "non c'è" ancora aperte, con chi e quando ha segnalato. */
+export const adminListMissing = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<MissingRock[]> => {
+    await assertAdmin(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("rock_reports")
+      .select("id,rock_id,user_id,photo,created_at")
+      .is("resolved_at", null)
+      .order("created_at");
+    if (error) throw new Error(error.message);
+    const rows = data ?? [];
+    if (!rows.length) return [];
+    const rockIds = [...new Set(rows.map((r) => r.rock_id))];
+    const userIds = [...new Set(rows.map((r) => r.user_id))];
+    const [{ data: rocks }, { data: people }] = await Promise.all([
+      supabaseAdmin.from("rocks").select("id,name,clue,lat,lng").in("id", rockIds),
+      supabaseAdmin.from("profiles").select("id,nickname").in("id", userIds),
+    ]);
+    const nick = new Map((people ?? []).map((p) => [p.id, p.nickname]));
+    return (rocks ?? [])
+      .map((rock) => ({
+        rock_id: rock.id,
+        name: rock.name,
+        clue: rock.clue,
+        lat: rock.lat,
+        lng: rock.lng,
+        reports: rows
+          .filter((r) => r.rock_id === rock.id)
+          .map((r) => ({
+            id: r.id,
+            created_at: r.created_at,
+            photo: r.photo,
+            nickname: nick.get(r.user_id) ?? "giocatore eliminato",
+          })),
+      }))
+      .sort((a, b) => b.reports.length - a.reports.length);
+  });
+
+/** Decisione dell'admin: togliere il sasso dalla mappa (va nel cestino) o ignorare le segnalazioni. */
+export const adminResolveMissing = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { rockId: string; action: "remove" | "dismiss" }) => ({
+    rockId: String(data.rockId),
+    action: data.action === "remove" ? ("remove" as const) : ("dismiss" as const),
+  }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context as Ctx);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const now = new Date().toISOString();
+    if (data.action === "remove") {
+      const { error } = await supabaseAdmin
+        .from("rocks")
+        .update({ deleted_at: now })
+        .eq("id", data.rockId);
+      if (error) throw new Error(error.message);
+    }
+    await supabaseAdmin
+      .from("rock_reports")
+      .update({ resolved_at: now, resolution: data.action === "remove" ? "removed" : "dismissed" })
+      .eq("rock_id", data.rockId)
+      .is("resolved_at", null);
+    await supabaseAdmin
+      .from("admin_notifications")
+      .update({ read_at: now })
+      .eq("rock_id", data.rockId)
+      .is("read_at", null);
     return { ok: true as const };
   });

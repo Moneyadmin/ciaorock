@@ -34,11 +34,12 @@ function PrivacyPage() {
 
       <H2>Età minima</H2>
       <p>
-        Ciao Rock è riservato a chi ha almeno {MIN_AGE} anni. All'iscrizione chiediamo la data di
-        nascita solo per verificarlo: non la salviamo, conserviamo soltanto la conferma che hai
-        almeno {MIN_AGE} anni e la data in cui hai accettato questa informativa e i termini. Se sei
-        un genitore e pensi che tuo figlio con meno di {MIN_AGE} anni si sia iscritto, scrivici e
-        cancelliamo l'account.
+        Ciao Rock è riservato a chi ha almeno {MIN_AGE} anni: all'iscrizione lo dichiari, e dopo i
+        primi 5 sassi trovati o nascosti (o prima di usare la chat) ti chiediamo la data di nascita
+        per verificarlo. Non la salviamo: conserviamo soltanto se hai più o meno di 18 anni (serve
+        perché la chat è possibile solo tra coetanei) e la data in cui hai accettato questa
+        informativa e i termini. Se sei un genitore e pensi che tuo figlio con meno di {MIN_AGE}{" "}
+        anni si sia iscritto, scrivici e cancelliamo l'account.
       </p>
 
       <H2>Quali dati trattiamo</H2>
@@ -96,7 +97,10 @@ function PrivacyPage() {
           Le tue <strong>foto-prova non sono visibili</strong> agli altri giocatori: le vedi solo tu
           e, se serve per controlli, gli amministratori.
         </li>
-        <li>I messaggi si possono scambiare solo tra amici e li vedete solo voi due.</li>
+        <li>
+          I messaggi si possono scambiare solo tra amici che hanno confermato età ed email, mai tra
+          un minorenne e un maggiorenne, e li vedete solo voi due.
+        </li>
       </List>
 
       <H2>Perché li trattiamo e su quale base</H2>

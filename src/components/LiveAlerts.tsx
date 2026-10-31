@@ -11,9 +11,48 @@ function notify(title: string, body: string) {
   void showNotification(title, body);
 }
 
-/** Ascolta in tempo reale avvisi dello staff e nuovi messaggi privati. */
+/** Ascolta in tempo reale avvisi dello staff, nuovi messaggi privati e (admin) segnalazioni. */
 export function LiveAlerts() {
-  const { userId } = useSession();
+  const { userId, admin } = useSession();
+
+  // Solo admin: sassi segnalati 3 volte come smarriti (in tempo reale e, all'apertura, quelli
+  // non ancora gestiti).
+  useEffect(() => {
+    if (!userId || !admin) return;
+    const alert = async (rockId: string | null) => {
+      const { data } = rockId
+        ? await supabase.from("rocks").select("name").eq("id", rockId).maybeSingle()
+        : { data: null };
+      const title = `🔎 Sasso segnalato come smarrito`;
+      const body = `“${data?.name ?? "Un sasso"}” è stato segnalato 3 volte. Decidi dal pannello admin, scheda Smarriti.`;
+      toast(title, {
+        id: `missing-${rockId}`,
+        description: body,
+        duration: 15000,
+        action: { label: "Apri", onClick: () => (window.location.href = "/admin") },
+      });
+      notify(title, body);
+    };
+    void supabase
+      .from("admin_notifications")
+      .select("rock_id")
+      .is("read_at", null)
+      .eq("kind", "rock_missing")
+      .then(({ data }) => {
+        for (const n of data ?? []) void alert(n.rock_id);
+      });
+    const channel = supabase
+      .channel(`admin-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "admin_notifications" },
+        (p) => void alert((p.new as { rock_id: string | null }).rock_id),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [userId, admin]);
 
   useEffect(() => {
     if (!userId) return;

@@ -54,6 +54,7 @@ function CreatePage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [name, setName] = useState("");
   const [clue, setClue] = useState("");
+  const [lore, setLore] = useState("");
   const [difficulty, setDifficulty] = useState<string>("Facile");
   const score = useServerFn(scoreRock);
   const [photo, setPhoto] = useState<string | null>(null);
@@ -212,6 +213,7 @@ function CreatePage() {
     const payload = {
       name: name.trim(),
       clue: clue.trim(),
+      ...(lore.trim() ? { lore: lore.trim() } : {}),
       photo,
       lat: position.lat,
       lng: position.lng,
@@ -239,6 +241,7 @@ function CreatePage() {
       setDraftFound(false);
       setName("");
       setClue("");
+      setLore("");
       setPhoto(null);
       setApproved(false);
       setVerdict(null);
@@ -362,6 +365,24 @@ function CreatePage() {
             onChange={(e) => setClue(e.target.value)}
             rows={3}
             placeholder="es. Sotto la terza panchina del viale, tra le radici."
+            className="w-full rounded-2xl border border-input bg-card px-4 py-3.5 text-base shadow-pebble outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1.5 flex items-baseline justify-between gap-2 pl-1">
+            <span className="text-sm font-extrabold">
+              La storia del sasso{" "}
+              <span className="font-semibold text-muted-foreground">(facoltativa)</span>
+            </span>
+            <span className="text-xs font-semibold text-muted-foreground">{lore.length}/1000</span>
+          </span>
+          <textarea
+            value={lore}
+            onChange={(e) => setLore(e.target.value)}
+            rows={3}
+            maxLength={1000}
+            placeholder="es. Sono Gigi, un sasso viaggiatore: vengo dal mare e sogno di vedere le montagne…"
             className="w-full rounded-2xl border border-input bg-card px-4 py-3.5 text-base shadow-pebble outline-none focus:border-ring focus:ring-4 focus:ring-ring/15"
           />
         </label>

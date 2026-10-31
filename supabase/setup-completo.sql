@@ -1557,3 +1557,211 @@ BEGIN
   RETURN NEW;
 END $$;
 ;
+
+-- ============================================================
+-- supabase/migrations/20261031090000_segnalazioni_lore.sql
+-- ============================================================
+-- Storia del sasso (facoltativa) e segnalazioni di sassi smarriti.
+--
+-- Chi non trova un sasso può segnalare che non c'è, con una foto di dove dovrebbe essere, se si
+-- trova entro 75 m dal sasso (lo controlla il server). Alla terza segnalazione aperta gli admin
+-- ricevono una notifica e decidono se toglierlo dalla mappa. Se qualcuno lo trova o lo sposta,
+-- le segnalazioni aperte si chiudono da sole.
+
+ALTER TABLE public.rocks ADD COLUMN IF NOT EXISTS lore text;
+ALTER TABLE public.rocks DROP CONSTRAINT IF EXISTS rocks_lore_len;
+ALTER TABLE public.rocks ADD CONSTRAINT rocks_lore_len CHECK (lore IS NULL OR char_length(lore) <= 1000);
+
+-- ---------------------------------------------------------------------------
+-- Segnalazioni
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.rock_reports (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  rock_id uuid NOT NULL REFERENCES public.rocks(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  photo text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  resolved_at timestamptz,
+  resolution text CHECK (resolution IN ('found', 'moved', 'removed', 'dismissed'))
+);
+-- una segnalazione aperta per giocatore e sasso
+CREATE UNIQUE INDEX IF NOT EXISTS rock_reports_open_once
+  ON public.rock_reports (rock_id, user_id) WHERE resolved_at IS NULL;
+CREATE INDEX IF NOT EXISTS rock_reports_rock_idx ON public.rock_reports (rock_id) WHERE resolved_at IS NULL;
+
+GRANT SELECT ON public.rock_reports TO authenticated;
+GRANT ALL ON public.rock_reports TO service_role;
+ALTER TABLE public.rock_reports ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS rock_reports_select ON public.rock_reports;
+-- il giocatore vede le sue, l'admin tutte (le foto non sono pubbliche)
+CREATE POLICY rock_reports_select ON public.rock_reports FOR SELECT TO authenticated
+  USING (user_id = auth.uid() OR public.has_role(auth.uid(), 'admin'));
+
+-- ---------------------------------------------------------------------------
+-- Notifiche per gli admin
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.admin_notifications (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  kind text NOT NULL CHECK (kind IN ('rock_missing')),
+  rock_id uuid REFERENCES public.rocks(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  read_at timestamptz
+);
+GRANT SELECT, UPDATE ON public.admin_notifications TO authenticated;
+GRANT ALL ON public.admin_notifications TO service_role;
+ALTER TABLE public.admin_notifications ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS admin_notifications_select ON public.admin_notifications;
+DROP POLICY IF EXISTS admin_notifications_update ON public.admin_notifications;
+CREATE POLICY admin_notifications_select ON public.admin_notifications FOR SELECT TO authenticated
+  USING (public.has_role(auth.uid(), 'admin'));
+CREATE POLICY admin_notifications_update ON public.admin_notifications FOR UPDATE TO authenticated
+  USING (public.has_role(auth.uid(), 'admin')) WITH CHECK (public.has_role(auth.uid(), 'admin'));
+
+DO $$ BEGIN
+  ALTER PUBLICATION supabase_realtime ADD TABLE public.admin_notifications;
+EXCEPTION WHEN duplicate_object OR undefined_object OR object_not_in_prerequisite_state THEN NULL;
+END $$;
+
+-- Terza segnalazione aperta: notifica agli admin (una sola volta per ciclo di segnalazioni).
+CREATE OR REPLACE FUNCTION public.rock_reports_notify()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF (SELECT count(*) FROM public.rock_reports
+      WHERE rock_id = NEW.rock_id AND resolved_at IS NULL) = 3 THEN
+    INSERT INTO public.admin_notifications (kind, rock_id) VALUES ('rock_missing', NEW.rock_id);
+  END IF;
+  RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS rock_reports_notify ON public.rock_reports;
+CREATE TRIGGER rock_reports_notify AFTER INSERT ON public.rock_reports
+FOR EACH ROW EXECUTE FUNCTION public.rock_reports_notify();
+
+-- Il sasso c'era (qualcuno l'ha trovato) o è stato spostato: le segnalazioni aperte si chiudono.
+CREATE OR REPLACE FUNCTION public.rock_reports_close()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+  IF TG_TABLE_NAME = 'finds' THEN
+    UPDATE public.rock_reports SET resolved_at = now(), resolution = 'found'
+    WHERE rock_id = NEW.rock_id AND resolved_at IS NULL;
+  ELSIF NEW.lat IS DISTINCT FROM OLD.lat OR NEW.lng IS DISTINCT FROM OLD.lng THEN
+    UPDATE public.rock_reports SET resolved_at = now(), resolution = 'moved'
+    WHERE rock_id = NEW.id AND resolved_at IS NULL;
+  END IF;
+  RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS finds_close_reports ON public.finds;
+CREATE TRIGGER finds_close_reports AFTER INSERT ON public.finds
+FOR EACH ROW EXECUTE FUNCTION public.rock_reports_close();
+DROP TRIGGER IF EXISTS rocks_close_reports ON public.rocks;
+CREATE TRIGGER rocks_close_reports AFTER UPDATE OF lat, lng ON public.rocks
+FOR EACH ROW EXECUTE FUNCTION public.rock_reports_close();
+
+REVOKE EXECUTE ON FUNCTION public.rock_reports_notify() FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.rock_reports_close() FROM public, anon, authenticated;
+;
+
+-- ============================================================
+-- supabase/migrations/20261031100000_eta_dopo_5_e_chat.sql
+-- ============================================================
+-- Conferma dell'età non più all'iscrizione ma dopo i primi 5 sassi trovati o nascosti.
+-- La chat richiede, a entrambi, età confermata, email confermata e amicizia, e non è mai
+-- possibile tra un minorenne e un maggiorenne.
+
+-- Fascia d'età: salviamo solo se è maggiorenne (non la data di nascita). I consensi dati prima
+-- di questa colonna vanno riconfermati.
+ALTER TABLE public.consents ADD COLUMN IF NOT EXISTS adult boolean;
+
+CREATE OR REPLACE FUNCTION public.accept_terms(_birth date, _version text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE
+  is_adult boolean;
+BEGIN
+  IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Accedi per continuare.'; END IF;
+  IF _birth IS NULL OR _birth < date '1900-01-01' OR _birth > current_date THEN
+    RAISE EXCEPTION 'Data di nascita non valida.';
+  END IF;
+  IF _birth > (current_date - interval '14 years')::date THEN
+    RAISE EXCEPTION 'Ciao Rock è riservato a chi ha almeno 14 anni.';
+  END IF;
+  IF coalesce(length(_version), 0) NOT BETWEEN 1 AND 40 THEN
+    RAISE EXCEPTION 'Versione dei documenti non valida.';
+  END IF;
+  is_adult := _birth <= (current_date - interval '18 years')::date;
+  INSERT INTO public.consents (user_id, age_14_declared, adult, terms_version)
+  VALUES (auth.uid(), true, is_adult, _version)
+  ON CONFLICT (user_id) DO UPDATE
+    SET age_14_declared = true, adult = excluded.adult,
+        terms_version = excluded.terms_version, accepted_at = now();
+END $$;
+
+-- Il profilo si crea senza consenso (lo crea comunque solo il server).
+DROP POLICY IF EXISTS "profiles_insert_own" ON public.profiles;
+CREATE POLICY "profiles_insert_own" ON public.profiles FOR INSERT TO authenticated
+  WITH CHECK (id = auth.uid());
+
+-- Sassi trovati + nascosti dal giocatore.
+CREATE OR REPLACE FUNCTION public.activity_count(_uid uuid)
+RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT ((SELECT count(*) FROM public.finds WHERE user_id = _uid)
+        + (SELECT count(*) FROM public.rocks WHERE creator_id = _uid))::integer
+$$;
+
+-- Deve confermare l'età prima di continuare? (dal 5° sasso in poi senza consenso)
+CREATE OR REPLACE FUNCTION public.needs_age_check(_uid uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT NOT EXISTS (SELECT 1 FROM public.consents WHERE user_id = _uid AND adult IS NOT NULL)
+     AND public.activity_count(_uid) >= 5
+$$;
+
+-- Può usare la chat: età confermata, email confermata, non bannato.
+CREATE OR REPLACE FUNCTION public.can_chat(_uid uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, auth AS $$
+  SELECT EXISTS (SELECT 1 FROM public.consents WHERE user_id = _uid AND adult IS NOT NULL)
+     AND EXISTS (SELECT 1 FROM auth.users WHERE id = _uid AND email_confirmed_at IS NOT NULL)
+     AND NOT coalesce((SELECT banned FROM public.profiles WHERE id = _uid), true)
+$$;
+
+-- Stessa fascia d'età (entrambi minorenni o entrambi maggiorenni).
+CREATE OR REPLACE FUNCTION public.same_age_group(_a uuid, _b uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT coalesce(
+    (SELECT a.adult = b.adult FROM public.consents a, public.consents b
+     WHERE a.user_id = _a AND b.user_id = _b), false)
+$$;
+
+-- chat possibile con un amico? (per mostrare il motivo nell'app, senza rivelare l'età)
+CREATE OR REPLACE FUNCTION public.chat_allowed_with(_other uuid)
+RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT CASE
+    WHEN NOT public.can_chat(auth.uid()) THEN 'me'
+    WHEN NOT public.are_friends(auth.uid(), _other) THEN 'friend'
+    WHEN NOT public.can_chat(_other) OR NOT public.same_age_group(auth.uid(), _other) THEN 'other'
+    ELSE 'ok' END
+$$;
+DROP POLICY IF EXISTS "messages_insert_own" ON public.messages;
+CREATE POLICY "messages_insert_own" ON public.messages FOR INSERT TO authenticated
+  WITH CHECK (
+    sender_id = auth.uid()
+    AND char_length(body) BETWEEN 1 AND 1000
+    AND public.chat_allowed_with(recipient_id) = 'ok'
+  );
+
+-- Stato del giocatore per l'app (una sola chiamata).
+CREATE OR REPLACE FUNCTION public.my_status()
+RETURNS TABLE (activity integer, consented boolean, email_confirmed boolean)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, auth AS $$
+  SELECT public.activity_count(auth.uid()),
+         EXISTS (SELECT 1 FROM public.consents WHERE user_id = auth.uid() AND adult IS NOT NULL),
+         EXISTS (SELECT 1 FROM auth.users WHERE id = auth.uid() AND email_confirmed_at IS NOT NULL)
+$$;
+
+REVOKE EXECUTE ON FUNCTION public.activity_count(uuid) FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.needs_age_check(uuid) FROM public, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.needs_age_check(uuid) TO service_role;
+REVOKE EXECUTE ON FUNCTION public.can_chat(uuid) FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.same_age_group(uuid, uuid) FROM public, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.chat_allowed_with(uuid) FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.chat_allowed_with(uuid) TO authenticated, service_role;
+REVOKE EXECUTE ON FUNCTION public.my_status() FROM public, anon;
+GRANT EXECUTE ON FUNCTION public.my_status() TO authenticated, service_role;
+;

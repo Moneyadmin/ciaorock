@@ -19,10 +19,10 @@ export function AppShell({
   /** Pulsante o elemento mostrato a destra del titolo. */
   action?: ReactNode;
 }) {
-  const { banned, userId, profile, consented, refresh, signOut } = useSession();
+  const { banned, userId, profile, needsAgeCheck, refresh, signOut } = useSession();
 
-  // Account esistenti: prima di continuare a giocare confermano età e accettano i documenti.
-  if (userId && profile && !consented) {
+  // Dopo i primi 5 sassi trovati o nascosti si conferma l'età per continuare a giocare.
+  if (userId && profile && needsAgeCheck) {
     return (
       <div className="app-frame bg-background">
         <div className="mx-auto grid min-h-[100dvh] max-w-md place-items-center px-5 py-10">

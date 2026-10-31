@@ -14,6 +14,7 @@ import {
   type ProfileRow,
 } from "@/lib/api";
 import { useSession } from "@/lib/useSession";
+import { ConsentGate } from "@/components/ConsentGate";
 
 export const Route = createFileRoute("/chat/$id")({
   head: () => ({
@@ -31,7 +32,10 @@ export const Route = createFileRoute("/chat/$id")({
 
 function ChatPage() {
   const { id } = Route.useParams();
-  const { loading, userId } = useSession();
+  const { loading, userId, consented, refresh, signOut } = useSession();
+  /** 'ok', 'me' (devo confermare età o email), 'friend' (non siamo amici), 'other' */
+  const [allowed, setAllowed] = useState<string | null>(null);
+  const [checkKey, setCheckKey] = useState(0);
   const navigate = useNavigate();
   const [other, setOther] = useState<ProfileRow | null>(null);
   const [messages, setMessages] = useState<MessageRow[]>([]);
@@ -42,6 +46,18 @@ function ChatPage() {
   useEffect(() => {
     if (!loading && !userId) navigate({ to: "/auth" });
   }, [loading, userId, navigate]);
+
+  useEffect(() => {
+    if (!userId) return;
+    let alive = true;
+    supabase.rpc("chat_allowed_with", { _other: id }).then(({ data, error }) => {
+      // database non ancora aggiornato: decide comunque la regola sui messaggi
+      if (alive) setAllowed(error ? "ok" : (data ?? "ok"));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [userId, id, checkKey]);
 
   useEffect(() => {
     if (!userId) return;
@@ -156,33 +172,57 @@ function ChatPage() {
         })}
         <div ref={endRef} />
       </div>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void send();
-        }}
-        className="fixed inset-x-0 bottom-[calc(6.75rem+env(safe-area-inset-bottom))] z-[850] mx-auto flex max-w-md gap-2 px-3"
-      >
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          maxLength={1000}
-          placeholder="Scrivi un messaggio…"
-          aria-label="Messaggio"
-          className="glass flex-1 rounded-full px-5 py-3.5 text-base outline-none focus:ring-4 focus:ring-ring/20"
-        />
-        <button
-          disabled={sending || !text.trim()}
-          aria-label="Invia"
-          className="press bg-brand grid h-[3.25rem] w-[3.25rem] shrink-0 place-items-center rounded-full text-white shadow-glow disabled:opacity-50"
+      {allowed === "me" && !consented && (
+        <div className="fixed inset-x-0 bottom-[calc(6.75rem+env(safe-area-inset-bottom))] z-[850] mx-auto max-w-md px-3">
+          <ConsentGate
+            reason="chat"
+            hasProfile
+            onSignOut={signOut}
+            onDone={async () => {
+              await refresh();
+              setCheckKey((k) => k + 1);
+            }}
+          />
+        </div>
+      )}
+      {allowed && allowed !== "ok" && !(allowed === "me" && !consented) && (
+        <p className="fixed inset-x-0 bottom-[calc(6.75rem+env(safe-area-inset-bottom))] z-[850] mx-auto max-w-md rounded-2xl bg-muted px-4 py-3 text-center text-sm font-semibold text-muted-foreground shadow-pebble">
+          {allowed === "me"
+            ? "Per usare la chat conferma la tua email: apri il link che ti abbiamo mandato o accedi con “Accedi senza password”."
+            : allowed === "friend"
+              ? "Potete scrivervi solo se siete amici."
+              : "Al momento non puoi scrivere a questo giocatore."}
+        </p>
+      )}
+      {allowed === "ok" && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void send();
+          }}
+          className="fixed inset-x-0 bottom-[calc(6.75rem+env(safe-area-inset-bottom))] z-[850] mx-auto flex max-w-md gap-2 px-3"
         >
-          {sending ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
-          ) : (
-            <SendHorizontal className="h-5 w-5" />
-          )}
-        </button>
-      </form>
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            maxLength={1000}
+            placeholder="Scrivi un messaggio…"
+            aria-label="Messaggio"
+            className="glass flex-1 rounded-full px-5 py-3.5 text-base outline-none focus:ring-4 focus:ring-ring/20"
+          />
+          <button
+            disabled={sending || !text.trim()}
+            aria-label="Invia"
+            className="press bg-brand grid h-[3.25rem] w-[3.25rem] shrink-0 place-items-center rounded-full text-white shadow-glow disabled:opacity-50"
+          >
+            {sending ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <SendHorizontal className="h-5 w-5" />
+            )}
+          </button>
+        </form>
+      )}
     </AppShell>
   );
 }
