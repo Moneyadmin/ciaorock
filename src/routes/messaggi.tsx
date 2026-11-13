@@ -49,7 +49,9 @@ function InboxPage() {
         () => void reload(),
       )
       .subscribe();
-    const poll = window.setInterval(reload, 6000);
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === "visible") void reload();
+    }, 30_000);
     return () => {
       alive = false;
       window.clearInterval(poll);

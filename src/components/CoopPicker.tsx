@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Loader2, MapPin, Swords, X } from "lucide-react";
 import { toast } from "sonner";
-import { coopInvite, fetchMyFinds, fetchRocks, type ProfileRow } from "@/lib/api";
+import { coopInvite, fetchMyFoundIds, fetchRocks, type ProfileRow } from "@/lib/api";
 import {
   DEFAULT_POSITION,
   distanceMeters,
@@ -34,8 +34,11 @@ export function CoopPicker({
   }, []);
 
   const rocks = useQuery({ queryKey: ["rocks"], queryFn: fetchRocks });
-  const finds = useQuery({ queryKey: ["my-finds", userId], queryFn: () => fetchMyFinds(userId) });
-  const found = new Set((finds.data ?? []).map((f) => f.rock?.id));
+  const finds = useQuery({
+    queryKey: ["my-found-ids", userId],
+    queryFn: () => fetchMyFoundIds(userId),
+  });
+  const found = new Set(finds.data ?? []);
   const candidates = (rocks.data ?? [])
     .filter((r) => !found.has(r.id) && r.creator_id !== userId && r.creator_id !== partner.id)
     .map((r) => ({ rock: r, distance: distanceMeters(here, r) }))

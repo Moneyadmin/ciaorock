@@ -46,32 +46,58 @@ export function formatDistance(m: number) {
   return `${(m / 1000).toFixed(1)} km`;
 }
 
-/** Compress a picked image to a small JPEG data URL (keeps rows light). */
+/**
+ * Riduce la foto scelta a un JPEG leggero (lato massimo maxSize). Le foto dei telefoni sono da
+ * 12–50 megapixel: decodificarle a piena risoluzione (e farne prima una stringa base64) occupa
+ * centinaia di MB e sui telefoni con poca memoria fa crashare la pagina. Qui il browser decodifica
+ * direttamente alla dimensione ridotta quando può, e il file originale non viene mai copiato.
+ */
 export async function compressImage(file: File, maxSize = 1000, quality = 0.72) {
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("Lettura file non riuscita"));
-    reader.readAsDataURL(file);
-  });
-
+  let source: ImageBitmap | HTMLImageElement | null = null;
+  let url: string | null = null;
   try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const image = new Image();
-      image.onload = () => resolve(image);
-      image.onerror = () => reject(new Error("Immagine non valida"));
-      image.src = dataUrl;
-    });
-    const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+    if (typeof createImageBitmap === "function") {
+      try {
+        // prima lettura solo per conoscere le proporzioni, poi decodifica già ridotta
+        const probe = await createImageBitmap(file);
+        const { width, height } = probe;
+        probe.close();
+        const scale = Math.min(1, maxSize / Math.max(width, height));
+        source = await createImageBitmap(file, {
+          resizeWidth: Math.max(1, Math.round(width * scale)),
+          resizeHeight: Math.max(1, Math.round(height * scale)),
+          resizeQuality: "high",
+          imageOrientation: "from-image",
+        });
+      } catch {
+        source = null;
+      }
+    }
+    if (!source) {
+      url = URL.createObjectURL(file);
+      source = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const image = new Image();
+        image.decoding = "async";
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error("Immagine non valida"));
+        image.src = url!;
+      });
+    }
+    const w = "naturalWidth" in source ? source.naturalWidth : source.width;
+    const h = "naturalHeight" in source ? source.naturalHeight : source.height;
+    const scale = Math.min(1, maxSize / Math.max(w, h));
     const canvas = document.createElement("canvas");
-    canvas.width = Math.round(img.width * scale);
-    canvas.height = Math.round(img.height * scale);
+    canvas.width = Math.max(1, Math.round(w * scale));
+    canvas.height = Math.max(1, Math.round(h * scale));
     const ctx = canvas.getContext("2d");
-    if (!ctx) return dataUrl;
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/jpeg", quality);
-  } catch {
-    return dataUrl;
+    if (!ctx) throw new Error("Immagine non valida");
+    ctx.drawImage(source, 0, 0, canvas.width, canvas.height);
+    const out = canvas.toDataURL("image/jpeg", quality);
+    canvas.width = canvas.height = 0; // libera subito la memoria del disegno
+    return out;
+  } finally {
+    if (source && "close" in source) source.close();
+    if (url) URL.revokeObjectURL(url);
   }
 }
 

@@ -17,6 +17,7 @@ import {
 import { AppShell } from "@/components/AppShell";
 import { createRock } from "@/lib/api";
 import { announceRewards } from "@/lib/rewards";
+import { CAMERA_TIP, clearCameraOpen, markCameraOpen, takeInterruptedCamera } from "@/lib/camera";
 import { clearDraft, enqueue, readDraft, saveDraft } from "@/lib/offline";
 import { DEFAULT_POSITION, compressImage, distanceMeters, getPrecisePosition } from "@/lib/rockdex";
 import { HIDE_RADIUS_M } from "@/lib/rules";
@@ -52,6 +53,7 @@ function CreatePage() {
   const { loading, userId, profile, admin } = useSession();
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const galleryRef = useRef<HTMLInputElement | null>(null);
   const [name, setName] = useState("");
   const [clue, setClue] = useState("");
   const [lore, setLore] = useState("");
@@ -77,6 +79,11 @@ function CreatePage() {
   useEffect(() => {
     if (!loading && (!userId || !profile?.nickname)) navigate({ to: "/auth" });
   }, [loading, userId, profile, navigate]);
+
+  // Il telefono ha chiuso l'app mentre la fotocamera era aperta: avvisiamo e suggeriamo la galleria.
+  useEffect(() => {
+    if (takeInterruptedCamera()?.kind === "crea") setError(CAMERA_TIP);
+  }, []);
 
   // Restore an interrupted draft
   useEffect(() => {
@@ -149,6 +156,7 @@ function CreatePage() {
   }
 
   async function onFile(file: File | undefined) {
+    clearCameraOpen();
     if (!file) return;
     if (!file.type.startsWith("image/")) {
       setError("Carica un file immagine della faccia dipinta.");
@@ -294,7 +302,10 @@ function CreatePage() {
           <StepLabel n={1} label="Foto della faccia dipinta (obbligatoria)" />
           <button
             type="button"
-            onClick={() => fileRef.current?.click()}
+            onClick={() => {
+              markCameraOpen({ kind: "crea" });
+              fileRef.current?.click();
+            }}
             className="press relative grid h-56 w-full place-items-center overflow-hidden rounded-[1.6rem] border-2 border-dashed border-primary/35 bg-secondary/60"
           >
             {photo ? (
@@ -325,6 +336,20 @@ function CreatePage() {
             className="hidden"
             onChange={(e) => void onFile(e.target.files?.[0])}
           />
+          <input
+            ref={galleryRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => void onFile(e.target.files?.[0])}
+          />
+          <button
+            type="button"
+            onClick={() => galleryRef.current?.click()}
+            className="press mt-2 w-full text-center text-xs font-extrabold text-primary"
+          >
+            Oppure scegli la foto dalla galleria
+          </button>
           {(checking || verdict) && (
             <div
               className={`mt-3 flex items-start gap-2 rounded-2xl p-3 text-sm font-semibold ${

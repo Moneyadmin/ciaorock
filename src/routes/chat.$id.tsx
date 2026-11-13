@@ -74,8 +74,10 @@ function ChatPage() {
         void reload();
       })
       .subscribe();
-    // Rete di sicurezza: se il tempo reale cade, ricarica ogni 4 secondi.
-    const poll = window.setInterval(reload, 4000);
+    // Rete di sicurezza se il tempo reale cade: ricarica ogni 20 secondi, solo con l'app aperta.
+    const poll = window.setInterval(() => {
+      if (document.visibilityState === "visible") void reload();
+    }, 20_000);
     return () => {
       alive = false;
       window.clearInterval(poll);

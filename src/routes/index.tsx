@@ -26,7 +26,8 @@ import { Tutorial, tutorialPending } from "@/components/Tutorial";
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchDoubleDays,
-  fetchMyFinds,
+  fetchMyFoundIds,
+  forgetRockPhoto,
   fetchRockLore,
   fetchRockPhoto,
   fetchRocks,
@@ -38,6 +39,7 @@ import {
 import { adminMoveRock } from "@/lib/admin.functions";
 import { importLegacyRocks } from "@/lib/legacy";
 import { announceRewards } from "@/lib/rewards";
+import { CAMERA_TIP, clearCameraOpen, markCameraOpen, takeInterruptedCamera } from "@/lib/camera";
 import { enqueue, readQueue } from "@/lib/offline";
 import {
   DEFAULT_POSITION,
@@ -88,6 +90,8 @@ function MapPage() {
   const [rocks, setRocks] = useState<RockRow[]>([]);
   const [foundIds, setFoundIds] = useState<string[]>([]);
   const [selected, setSelected] = useState<RockRow | null>(null);
+  const [sheetMode, setSheetMode] = useState<"view" | "find" | "move" | "report">("view");
+  const interrupted = useRef<ReturnType<typeof takeInterruptedCamera> | undefined>(undefined);
   const [visible, setVisible] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [online, setOnline] = useState(true);
@@ -166,24 +170,40 @@ function MapPage() {
       const list = await fetchRocks();
       setRocks(list);
       if (userId) {
-        const finds = await fetchMyFinds(userId);
-        setFoundIds(finds.map((f) => f.rock?.id).filter((id): id is string => Boolean(id)));
+        setFoundIds(await fetchMyFoundIds(userId));
       }
     } catch {
       /* offline: keep whatever we already show */
     }
   }, [userId]);
 
+  // Il telefono ha chiuso l'app mentre la fotocamera era aperta: riapriamo il sasso dov'era.
+  useEffect(() => {
+    if (interrupted.current === undefined) interrupted.current = takeInterruptedCamera();
+    const ctx = interrupted.current;
+    if (!ctx || ctx.kind !== "sheet" || !rocks.length) return;
+    interrupted.current = null;
+    const rock = rocks.find((r) => r.id === ctx.rockId);
+    if (!rock) return;
+    setSheetMode(ctx.mode);
+    setSelected(rock);
+    setToast(CAMERA_TIP);
+  }, [rocks]);
+
+  // La mappa si aggiorna ogni 2 minuti (solo con l'app in primo piano) e dopo le proprie azioni.
+  // Niente tempo reale su sassi e ritrovamenti: ogni modifica di chiunque mandava a tutti la foto
+  // del sasso e faceva riscaricare l'elenco, consumando la banda (egress) di Supabase.
   useEffect(() => {
     if (!userId) return;
     void reload();
-    const channel = supabase
-      .channel("rockdex-live")
-      .on("postgres_changes", { event: "*", schema: "public", table: "rocks" }, () => void reload())
-      .on("postgres_changes", { event: "*", schema: "public", table: "finds" }, () => void reload())
-      .subscribe();
+    const tick = () => {
+      if (document.visibilityState === "visible") void reload();
+    };
+    const timer = window.setInterval(tick, 120_000);
+    document.addEventListener("visibilitychange", tick);
     return () => {
-      void supabase.removeChannel(channel);
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", tick);
     };
   }, [userId, reload]);
 
@@ -281,7 +301,10 @@ function MapPage() {
                 me={position}
                 targetIds={targetIds}
                 foundIds={foundIds}
-                onSelect={setSelected}
+                onSelect={(r) => {
+                  setSheetMode("view");
+                  setSelected(r);
+                }}
                 onVisibleCount={setVisible}
                 adminMove={admin && !askMove}
                 armedId={moving?.id ?? null}
@@ -431,12 +454,17 @@ function MapPage() {
 
         {selected && (
           <RockSheet
+            key={selected.id}
             rock={selected}
             userId={userId}
             me={position}
             found={foundIds.includes(selected.id)}
             mine={selected.creator_id === userId}
-            onClose={() => setSelected(null)}
+            initialMode={sheetMode}
+            onClose={() => {
+              setSelected(null);
+              setSheetMode("view");
+            }}
             onDone={(message) => {
               setToast(message);
               setSelected(null);
@@ -469,9 +497,11 @@ function RockSheet({
   me,
   found,
   mine,
+  initialMode = "view",
   onClose,
   onDone,
 }: {
+  initialMode?: "view" | "find" | "move" | "report";
   rock: RockRow;
   userId: string | null;
   me: { lat: number; lng: number };
@@ -481,7 +511,7 @@ function RockSheet({
   onDone: (message: string) => void;
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
-  const [mode, setMode] = useState<"view" | "find" | "move" | "report">("view");
+  const [mode, setMode] = useState<"view" | "find" | "move" | "report">(initialMode);
   const [lore, setLore] = useState<string | null>(null);
   const [proof, setProof] = useState<string | null>(null);
   const [clue, setClue] = useState(rock.clue);
@@ -497,6 +527,7 @@ function RockSheet({
   const [verdict, setVerdict] = useState<string | null>(null);
   const [token, setToken] = useState<string | undefined>(undefined);
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const galleryRef = useRef<HTMLInputElement | null>(null);
   const comparePhoto = useServerFn(matchRockPhoto);
   const distance = distanceMeters(me, rock);
   const near = distance <= FIND_RADIUS_M;
@@ -533,7 +564,13 @@ function RockSheet({
       .catch(() => undefined);
   }, [mode]);
 
+  function openCamera() {
+    if (mode !== "view") markCameraOpen({ kind: "sheet", rockId: rock.id, mode });
+    fileRef.current?.click();
+  }
+
   async function pickProof(file: File | undefined) {
+    clearCameraOpen();
     if (!file) return;
     setError(null);
     setApproved(false);
@@ -664,6 +701,7 @@ function RockSheet({
         fromLng: me.lng,
         token,
       });
+      forgetRockPhoto(rock.id);
       onDone(`“${rock.name}” è stato nascosto in un nuovo posto 🪨`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Spostamento non riuscito.");
@@ -849,7 +887,7 @@ function RockSheet({
           <div className="mt-4 space-y-3">
             <button
               type="button"
-              onClick={() => fileRef.current?.click()}
+              onClick={openCamera}
               className="press grid h-44 w-full place-items-center overflow-hidden rounded-[1.4rem] border-2 border-dashed border-primary/35 bg-secondary/60"
             >
               {proof ? (
@@ -875,6 +913,20 @@ function RockSheet({
               className="hidden"
               onChange={(e) => void pickProof(e.target.files?.[0])}
             />
+            <input
+              ref={galleryRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => void pickProof(e.target.files?.[0])}
+            />
+            <button
+              type="button"
+              onClick={() => galleryRef.current?.click()}
+              className="press w-full text-center text-xs font-extrabold text-primary"
+            >
+              Oppure scegli la foto dalla galleria
+            </button>
 
             {(checking || verdict) && (
               <div

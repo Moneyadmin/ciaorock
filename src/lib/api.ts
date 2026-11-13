@@ -92,7 +92,34 @@ export async function fetchRocks(): Promise<RockRow[]> {
   return ((data ?? []) as unknown as RockSelect[]).map(mapRock);
 }
 
-export async function fetchRockPhoto(rockId: string): Promise<string | null> {
+/** Id dei sassi che ho trovato: solo gli id, senza foto (per la mappa e le missioni). */
+export async function fetchMyFoundIds(userId: string): Promise<string[]> {
+  const { data, error } = await supabase.from("finds").select("rock_id").eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((f) => f.rock_id);
+}
+
+// Le foto dei sassi sono pesanti: una volta scaricate restano in memoria finché la pagina è aperta.
+const rockPhotoCache = new Map<string, Promise<string | null>>();
+
+export function fetchRockPhoto(rockId: string): Promise<string | null> {
+  let cached = rockPhotoCache.get(rockId);
+  if (!cached) {
+    cached = loadRockPhoto(rockId).catch((err: unknown) => {
+      rockPhotoCache.delete(rockId);
+      throw err;
+    });
+    rockPhotoCache.set(rockId, cached);
+  }
+  return cached;
+}
+
+/** Dopo uno spostamento la foto cambia: va riscaricata. */
+export function forgetRockPhoto(rockId: string) {
+  rockPhotoCache.delete(rockId);
+}
+
+async function loadRockPhoto(rockId: string): Promise<string | null> {
   const { data, error } = await supabase
     .from("rocks")
     .select("photo")
@@ -115,9 +142,7 @@ export async function fetchRockMoveCount(rockId: string): Promise<number> {
 export async function fetchMyFinds(userId: string) {
   const { data, error } = await supabase
     .from("finds")
-    .select(
-      "id,found_at,photo,city,region,country,continent,rock:rocks(id,name,clue,photo,creator_id)",
-    )
+    .select("id,found_at,photo,city,region,country,continent,rock:rocks(id,name,clue,creator_id)")
     .eq("user_id", userId)
     .order("found_at", { ascending: false });
   if (error) throw new Error(error.message);
@@ -134,7 +159,19 @@ export async function fetchMyFinds(userId: string) {
     .select("find_id,photo")
     .eq("user_id", userId);
   const byFind = new Map((photos ?? []).map((p) => [p.find_id, p.photo]));
-  return finds.map((f) => ({ ...f, photo: byFind.get(f.id) || f.photo }));
+  // la foto del sasso solo per i ritrovamenti senza foto-prova (es. importati), non per tutti
+  const missing = finds
+    .filter((f) => !byFind.get(f.id) && !f.photo && f.rock)
+    .map((f) => f.rock!.id);
+  const rockPhotos = new Map<string, string | null>();
+  await Promise.all(
+    missing.map(async (id) => rockPhotos.set(id, await fetchRockPhoto(id).catch(() => null))),
+  );
+  return finds.map((f) => ({
+    ...f,
+    photo: byFind.get(f.id) || f.photo,
+    rock: f.rock ? { ...f.rock, photo: rockPhotos.get(f.rock.id) ?? "" } : null,
+  }));
 }
 
 export async function fetchFindsFor(userId: string): Promise<FindRecord[]> {
