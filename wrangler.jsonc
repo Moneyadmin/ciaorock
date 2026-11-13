@@ -22,6 +22,8 @@
   },
   // Non cancellare le variabili di testo impostate dalla dashboard (es. SUPABASE_URL) a ogni deploy.
   "keep_vars": true,
+  // Foto (sassi, foto-prova, segnalazioni, profilo): vedi src/lib/photos.server.ts
+  "r2_buckets": [{ "binding": "PHOTOS", "bucket_name": "ciaorock-foto" }],
   "observability": { "enabled": true },
   // Il limite di CPU per richiesta (piano Paid). Le attese di rete (AI, Supabase) non contano.
   "limits": { "cpu_ms": 30000 }
