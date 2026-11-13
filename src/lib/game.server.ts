@@ -27,5 +27,8 @@ export async function hasFound(rockId: string, userId: string) {
 export async function verifyRockProof(rockId: string, photo: string): Promise<RockPhotoCheck> {
   const rock = await loadRock(rockId);
   if (!rock) return { approved: false, message: "Questo sasso non esiste più." };
-  return rock.photo ? checkSameRock(photo, rock.photo) : checkPainted(photo);
+  // la foto di riferimento può stare in R2 ("/foto/…"): all'AI la passiamo come dati
+  const { photoAsDataUrl } = await import("./photos.server");
+  const reference = rock.photo ? await photoAsDataUrl(rock.photo).catch(() => null) : null;
+  return reference ? checkSameRock(photo, reference) : checkPainted(photo);
 }

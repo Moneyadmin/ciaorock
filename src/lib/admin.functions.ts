@@ -394,3 +394,104 @@ export const adminResolveMissing = createServerFn({ method: "POST" })
       .is("read_at", null);
     return { ok: true as const };
   });
+
+export type PhotoMigration = { moved: number; remaining: number; done: boolean };
+
+/**
+ * Sposta su Cloudflare R2 le foto ancora salvate nel database (o nello Storage di Supabase),
+ * un blocco alla volta: il pannello la richiama finché remaining arriva a 0.
+ */
+export const adminMigratePhotos = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<PhotoMigration> => {
+    await assertAdmin(context as Ctx);
+    const { photoBucket, storePhoto, photoAsDataUrl } = await import("./photos.server");
+    if (!(await photoBucket())) {
+      throw new Error(
+        "R2 non collegato: crea il bucket e il collegamento PHOTOS nel Worker (vedi README).",
+      );
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const BATCH = 15;
+    let moved = 0;
+
+    // 1. foto dei sassi
+    const rocks = await supabaseAdmin
+      .from("rocks")
+      .select("id,photo")
+      .like("photo", "data:%")
+      .limit(BATCH);
+    for (const r of rocks.data ?? []) {
+      const url = await storePhoto(r.photo, "r");
+      if (url === r.photo) continue; // non è un'immagine leggibile: resta com'è
+      await supabaseAdmin.from("rocks").update({ photo: url }).eq("id", r.id);
+      moved++;
+    }
+    // 2. foto-prova
+    if (moved < BATCH) {
+      const finds = await supabaseAdmin
+        .from("find_photos")
+        .select("find_id,user_id,photo")
+        .like("photo", "data:%")
+        .limit(BATCH - moved);
+      for (const f of finds.data ?? []) {
+        const url = await storePhoto(f.photo, `f/${f.user_id}`);
+        if (url === f.photo) continue;
+        await supabaseAdmin.from("find_photos").update({ photo: url }).eq("find_id", f.find_id);
+        moved++;
+      }
+    }
+    // 3. foto delle segnalazioni
+    if (moved < BATCH) {
+      const reports = await supabaseAdmin
+        .from("rock_reports")
+        .select("id,user_id,photo")
+        .like("photo", "data:%")
+        .limit(BATCH - moved);
+      for (const r of reports.data ?? []) {
+        const url = await storePhoto(r.photo, `s/${r.user_id}`);
+        if (url === r.photo) continue;
+        await supabaseAdmin.from("rock_reports").update({ photo: url }).eq("id", r.id);
+        moved++;
+      }
+    }
+    // 4. foto profilo nello Storage di Supabase
+    if (moved < BATCH) {
+      const avatars = await supabaseAdmin
+        .from("profiles")
+        .select("id,avatar_url")
+        .like("avatar_url", "%/storage/v1/object/public/avatars/%")
+        .limit(BATCH - moved);
+      for (const p of avatars.data ?? []) {
+        const data = p.avatar_url ? await photoAsDataUrl(p.avatar_url).catch(() => null) : null;
+        const url = data ? await storePhoto(data, `a/${p.id}`) : null;
+        await supabaseAdmin.from("profiles").update({ avatar_url: url }).eq("id", p.id);
+        const marker = "/object/public/avatars/";
+        const path = p.avatar_url?.slice(p.avatar_url.indexOf(marker) + marker.length);
+        if (path)
+          await supabaseAdmin.storage
+            .from("avatars")
+            .remove([path])
+            .catch(() => undefined);
+        moved++;
+      }
+    }
+
+    const count = async (table: "rocks" | "find_photos" | "rock_reports") => {
+      const { count: n } = await supabaseAdmin
+        .from(table)
+        .select("photo", { count: "exact", head: true })
+        .like("photo", "data:%");
+      return n ?? 0;
+    };
+    const { count: avatarsLeft } = await supabaseAdmin
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .like("avatar_url", "%/storage/v1/object/public/avatars/%");
+    const remaining =
+      (await count("rocks")) +
+      (await count("find_photos")) +
+      (await count("rock_reports")) +
+      (avatarsLeft ?? 0);
+    return { moved, remaining, done: remaining === 0 };
+  });

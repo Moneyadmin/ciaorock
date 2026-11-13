@@ -217,6 +217,19 @@ npm run preview:cloudflare   # build + wrangler dev su http://localhost:8787
 
 Ogni push su `main` viene pubblicato; i push su altri branch creano anteprime separate.
 
+### Foto su Cloudflare R2
+
+Le foto (sassi, foto-prova, segnalazioni, foto profilo) stanno nel bucket R2 `ciaorock-foto`,
+collegato al Worker come `PHOTOS` (`wrangler.jsonc`). Il database salva solo l'indirizzo
+`/foto/<chiave>` e il Worker le serve con cache permanente (`src/lib/photos.server.ts`): così non
+consumano la banda (egress) di Supabase. Senza bucket, per esempio in locale con Node, le foto
+restano nel database come data URL.
+
+1. Cloudflare → **R2** → **Create bucket** → nome `ciaorock-foto` (posizione automatica).
+2. Il collegamento `PHOTOS` è già in `wrangler.jsonc`: al prossimo deploy il Worker lo usa.
+3. Pannello admin → scheda **Sassi** → **Sposta le foto su R2**: sposta le foto già salvate in
+   Supabase (si può rilanciare, sposta solo quelle che mancano).
+
 ## Pubblicare su Render (gratis, con il proprio dominio)
 
 Il modo più semplice. Il piano gratuito si addormenta dopo ~15 minuti senza visite: la prima apertura

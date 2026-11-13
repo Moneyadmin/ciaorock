@@ -35,12 +35,22 @@ export const uploadAvatar = createServerFn({ method: "POST" })
     if (!check.approved) return { ok: false, message: check.message };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const ext = contentType.split("/")[1] === "jpeg" ? "jpg" : contentType.split("/")[1];
-    const path = `${context.userId}/${Date.now()}.${ext}`;
+    const { photoBucket, storePhoto, deletePhoto } = await import("./photos.server");
     const bucket = supabaseAdmin.storage.from(AVATAR_BUCKET);
-    const { error: uploadError } = await bucket.upload(path, bytes, { contentType, upsert: false });
-    if (uploadError) throw new Error(uploadError.message);
-    const url = bucket.getPublicUrl(path).data.publicUrl;
+    let url: string;
+    if (await photoBucket()) {
+      // Cloudflare R2: la foto non consuma la banda di Supabase
+      url = await storePhoto(data.photo, `a/${context.userId}`);
+    } else {
+      const ext = contentType.split("/")[1] === "jpeg" ? "jpg" : contentType.split("/")[1];
+      const path = `${context.userId}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await bucket.upload(path, bytes, {
+        contentType,
+        upsert: false,
+      });
+      if (uploadError) throw new Error(uploadError.message);
+      url = bucket.getPublicUrl(path).data.publicUrl;
+    }
 
     const { data: old } = await supabaseAdmin
       .from("profiles")
@@ -52,6 +62,7 @@ export const uploadAvatar = createServerFn({ method: "POST" })
       .update({ avatar_url: url })
       .eq("id", context.userId);
     if (error) throw new Error(error.message);
+    await deletePhoto(old?.avatar_url);
     const oldPath = storagePath(old?.avatar_url ?? null);
     if (oldPath) await bucket.remove([oldPath]).catch(() => undefined);
     return { ok: true, url };
@@ -67,6 +78,8 @@ export const removeAvatar = createServerFn({ method: "POST" })
       .eq("id", context.userId)
       .maybeSingle();
     await supabaseAdmin.from("profiles").update({ avatar_url: null }).eq("id", context.userId);
+    const { deletePhoto } = await import("./photos.server");
+    await deletePhoto(old?.avatar_url);
     const oldPath = storagePath(old?.avatar_url ?? null);
     if (oldPath)
       await supabaseAdmin.storage
@@ -150,10 +163,31 @@ export const deleteAccount = createServerFn({ method: "POST" })
     if (files?.length) {
       await bucket.remove(files.map((f) => `${context.userId}/${f.name}`)).catch(() => undefined);
     }
+    const { deletePhotoFolder } = await import("./photos.server");
+    for (const folder of ["a", "f", "s"]) {
+      await deletePhotoFolder(`${folder}/${context.userId}/`).catch(() => undefined);
+    }
+    const { data: myRocks } = await supabaseAdmin
+      .from("rocks")
+      .select("id,photo")
+      .eq("creator_id", context.userId);
     const { error: prepError } = await supabaseAdmin.rpc("prepare_account_deletion", {
       _uid: context.userId,
     });
     if (prepError) throw new Error(prepError.message);
+    // foto dei sassi cancellati (quelli già trovati da altri restano, con la loro foto)
+    if (myRocks?.length) {
+      const { data: kept } = await supabaseAdmin
+        .from("rocks")
+        .select("id")
+        .in(
+          "id",
+          myRocks.map((r) => r.id),
+        );
+      const keep = new Set((kept ?? []).map((r) => r.id));
+      const { deletePhoto } = await import("./photos.server");
+      for (const r of myRocks) if (!keep.has(r.id)) await deletePhoto(r.photo);
+    }
     const { error } = await supabaseAdmin.auth.admin.deleteUser(context.userId);
     if (error) throw new Error(error.message);
     return { ok: true };

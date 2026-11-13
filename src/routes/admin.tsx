@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { RewardsAdmin } from "@/components/RewardsAdmin";
 import { MissingAdmin } from "@/components/MissingAdmin";
+import { PhotoMigration } from "@/components/PhotoMigration";
 import { ADMIN_HOLD_MS } from "@/lib/rules";
 import { AppShell } from "@/components/AppShell";
 import { useSession } from "@/lib/useSession";
@@ -289,6 +290,8 @@ function AdminTools() {
           ))}
         </div>
       )}
+
+      {tab === "sassi" && <PhotoMigration />}
 
       {tab === "sassi" && (
         <p className="pebble-card p-4 text-xs text-muted-foreground">

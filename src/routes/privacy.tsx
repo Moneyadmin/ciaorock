@@ -153,8 +153,10 @@ function PrivacyPage() {
         trattamento (art. 28 GDPR):
       </p>
       <List>
-        <li>Supabase, Inc.: database, accesso e archiviazione delle foto profilo;</li>
-        <li>Cloudflare, Inc.: hosting dell'app e rete di distribuzione;</li>
+        <li>Supabase, Inc.: database e accesso;</li>
+        <li>
+          Cloudflare, Inc.: hosting dell'app, archiviazione delle foto e rete di distribuzione;
+        </li>
         <li>{EMAIL_PROVIDER}: invio delle email di servizio;</li>
         <li>
           OpenRouter, Inc. e, tramite questo, Google LLC e OpenAI: controlli AI descritti sopra;

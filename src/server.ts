@@ -56,6 +56,11 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     const redirect = wwwRedirect(request);
     if (redirect) return redirect;
+    // Foto da Cloudflare R2 (vedi lib/photos.server.ts): non passano da React né da Supabase.
+    if (new URL(request.url).pathname.startsWith("/foto/")) {
+      const { servePhoto } = await import("./lib/photos.server");
+      return servePhoto(request, ctx as { waitUntil?: (p: Promise<unknown>) => void } | undefined);
+    }
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

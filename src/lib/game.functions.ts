@@ -3,6 +3,12 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { DIFFICULTIES, FIND_RADIUS_M, HIDE_RADIUS_M, metersBetween } from "./rules";
 
+/** Salva la foto su R2 (se disponibile) e restituisce cosa scrivere nel database. */
+async function savePhoto(photo: string, folder: string) {
+  const { storePhoto } = await import("./photos.server");
+  return storePhoto(photo, folder);
+}
+
 /**
  * Le tre azioni che cambiano il gioco (nuovo sasso, ritrovamento, spostamento) passano da qui.
  * Il database non le accetta più dal browser: il server controlla foto, distanza e permessi
@@ -98,7 +104,7 @@ export const createRockFn = createServerFn({ method: "POST" })
         clue: data.clue,
         ...(data.lore ? { lore: data.lore } : {}),
         difficulty: data.difficulty,
-        photo: data.photo,
+        photo: await savePhoto(data.photo, "r"),
         lat: data.lat,
         lng: data.lng,
         creator_id: context.userId,
@@ -151,7 +157,7 @@ export const claimFindFn = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.from("finds").insert({
       rock_id: rock.id,
       user_id: context.userId,
-      photo: data.photo,
+      photo: await savePhoto(data.photo, `f/${context.userId}`),
       city: place?.city ?? null,
       region: place?.region ?? null,
       country: place?.country ?? null,
@@ -213,12 +219,13 @@ export const moveRockFn = createServerFn({ method: "POST" })
       if (!check.approved) return { ok: false, message: check.message };
     }
 
+    const newPhoto = await savePhoto(data.photo, "r");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("rocks")
       .update({
         clue: data.clue,
-        photo: data.photo,
+        photo: newPhoto,
         lat: data.lat,
         lng: data.lng,
         hidden_by: context.userId,
@@ -226,6 +233,11 @@ export const moveRockFn = createServerFn({ method: "POST" })
       })
       .eq("id", rock.id);
     if (error) throw new Error(error.message);
+    // la vecchia foto del sasso non serve più
+    if (rock.photo !== newPhoto) {
+      const { deletePhoto } = await import("./photos.server");
+      await deletePhoto(rock.photo);
+    }
     return { ok: true };
   });
 
@@ -256,9 +268,11 @@ export const reportMissingFn = createServerFn({ method: "POST" })
       };
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("rock_reports")
-      .insert({ rock_id: rock.id, user_id: context.userId, photo: data.photo });
+    const { error } = await supabaseAdmin.from("rock_reports").insert({
+      rock_id: rock.id,
+      user_id: context.userId,
+      photo: await savePhoto(data.photo, `s/${context.userId}`),
+    });
     if (error) {
       if (error.code === "23505") return { ok: false, message: "Hai già segnalato questo sasso." };
       throw new Error(error.message);
